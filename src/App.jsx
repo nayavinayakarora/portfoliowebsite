@@ -18,7 +18,7 @@ const featuredCollections = [
     label: 'Personal Projects',
     eyebrow: 'Original music, synthesis, and experiments',
     intro:
-      'The personal work section keeps the titles and destinations from your current portfolio, but presents them like a curated reel wall instead of a static article grid.',
+      'Original works across synthesis, songwriting, immersive listening, and research-led experimentation.',
     items: [
       {
         title: 'Masters Project Overview',
@@ -101,7 +101,7 @@ const featuredCollections = [
         date: 'August 21, 2021',
         role: 'Debut single',
         blurb:
-          'Your first song, with streaming links carried across to Apple Music, Spotify, and Amazon Music.',
+          'A debut single with streaming links to Apple Music, Spotify, and Amazon Music.',
         href: 'https://youtu.be/V_6hWmnEj_o',
         image:
           'https://media.journoportfolio.com/users/413008/images/b835e32f-478f-454d-ad75-65073d436ee3_max-600.jpg',
@@ -127,7 +127,7 @@ const featuredCollections = [
     label: 'Moving Picture',
     eyebrow: 'Film, fashion, ads, and screen-led sound work',
     intro:
-      'This section gathers your visual-media work into a sharper showcase, with the same external destinations and stronger hierarchy.',
+      'Selected sound design, score, foley, and audio integration work for screen-based projects.',
     items: [
       {
         title: 'Innerspace Gameplay - Game Audio and Music Portfolio',
@@ -181,7 +181,7 @@ const featuredCollections = [
     label: 'Student Performances',
     eyebrow: 'Mentoring and recital work',
     intro:
-      'Your teaching and artist-development work becomes part of the story here instead of getting lost in the lower half of the page.',
+      'Mentored performances and recital work shaped through artist development, direction, and production.',
     items: [
       {
         title: 'Kriti Sethia covers Easy on Me',
@@ -474,20 +474,20 @@ function App() {
       <main>
         <section className="hero-section" id="top">
           <div className="hero-copy">
-            <p className="eyebrow">Signalpath-inspired portfolio</p>
+            <p className="eyebrow">Composer, producer, sound designer</p>
             <h1>Music, sound, teaching, and interactive audio in one cinematic portfolio.</h1>
             <p className="hero-text">
-              This rebuild keeps the links and work from your current portfolio, but turns them into
-              a darker, more intentional experience with interactive sections, immersive cards, and a
-              cleaner story around what you actually do.
+              Vinay Arora works across music production, sound design, teaching, and game audio. The
+              portfolio brings together original releases, visual-media work, student performances,
+              and interactive audio projects in one place.
             </p>
 
             <div className="hero-actions">
               <a className="primary-button" href="#featured" onClick={handleActionClick} {...attachHover(2)}>
-                Explore featured work
+                View featured work
               </a>
               <a className="secondary-button" href="#contact" onClick={handleActionClick} {...attachHover(3)}>
-                Open contact links
+                Get in touch
               </a>
             </div>
 
@@ -498,7 +498,7 @@ function App() {
               </article>
               <article {...attachHover(5)}>
                 <strong>20+</strong>
-                <span>live destinations carried over</span>
+                <span>projects and destinations</span>
               </article>
               <article {...attachHover(6)}>
                 <strong>FMOD</strong>
@@ -602,7 +602,7 @@ function App() {
         <section className="listening-section" id="listening-room">
           <div className="section-heading">
             <p className="eyebrow">Listening room</p>
-            <h2>Keep the streaming links, but present them like a curated control deck.</h2>
+            <h2>Listen across vocal arrangements, masters, production work, and live performance.</h2>
           </div>
 
           <div className="playlist-shell">
@@ -701,7 +701,7 @@ function App() {
         <section className="games-section" id="games">
           <div className="section-heading">
             <p className="eyebrow">Games</p>
-            <h2>Interactive work gets its own install bay.</h2>
+            <h2>Download and explore released interactive work.</h2>
           </div>
 
           <div className="games-grid">
@@ -735,11 +735,11 @@ function App() {
 
         <section className="services-section" id="services">
           <div className="services-copy">
-            <p className="eyebrow">My services</p>
-            <h2>All your existing service lines, reframed as a stronger offer surface.</h2>
+            <p className="eyebrow">Services</p>
+            <h2>Sound, music, mixing, mastering, and game-audio services.</h2>
             <p>
-              The old portfolio listed these plainly. Here they read more like a professional signal
-              board for collaborators, artists, studios, and game teams.
+              Available for collaborations across artists, studios, films, games, and education-led
+              creative work.
             </p>
           </div>
 
@@ -757,7 +757,7 @@ function App() {
       <footer className="site-footer" id="contact">
         <div className="footer-copy">
           <p className="eyebrow">Contact & links</p>
-          <h2>Everything important from the current portfolio, carried into one cleaner endpoint.</h2>
+          <h2>Connect across music, collaboration, teaching, and studio work.</h2>
         </div>
 
         <div className="footer-links">
