@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+
+:root {
+  --bg: #1b140f;
+  --bg-secondary: #2a1d16;
+  --panel: rgba(49, 34, 24, 0.68);
+  --panel-strong: rgba(41, 28, 20, 0.9);
+  --text-strong: #f7efe4;
+  --text-soft: #d4bfaa;
+  --border-soft: rgba(213, 170, 126, 0.16);
+  --border-strong: rgba(213, 170, 126, 0.3);
+  --accent-cyan: #e3b074;
+  --accent-blue: #c68852;
+  --shadow-soft: 0 18px 44px rgba(11, 7, 4, 0.38);
+  --font-body: 'Inter Tight', sans-serif;
+  --font-display: 'Manrope', sans-serif;
+
+  font-family: var(--font-body);
+  line-height: 1.55;
+  font-weight: 500;
+  color: var(--text-strong);
+  background:
+    radial-gradient(circle at top center, rgba(201, 128, 70, 0.18), transparent 28%),
+    radial-gradient(circle at 18% 18%, rgba(134, 94, 59, 0.14), transparent 24%),
+    linear-gradient(180deg, #2a1e16 0%, #1c140f 36%, #130d09 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 6rem;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+body,
+button,
+a,
+input,
+textarea {
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+strong {
+  text-wrap: balance;
+}
+
+img,
+iframe {
+  max-width: 100%;
+  display: block;
+}
