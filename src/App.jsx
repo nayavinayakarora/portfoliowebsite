@@ -299,84 +299,94 @@ const contactActions = [
 
 const STORAGE_SOUND = 'vinay-portfolio-sound-enabled'
 const STORAGE_EXPERIENCE = 'vinay-portfolio-experience-mode'
+const STORAGE_THEME = 'vinay-portfolio-theme'
 
-function useDeferredAsset(rootMargin = '240px') {
-  const ref = useRef(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
-
-  useEffect(() => {
-    if (shouldLoad || typeof IntersectionObserver === 'undefined') {
-      setShouldLoad(true)
-      return undefined
-    }
-
-    const element = ref.current
-    if (!element) {
-      return undefined
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoad(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin },
-    )
-
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [rootMargin, shouldLoad])
-
-  return { ref, shouldLoad }
-}
-
-function DeferredImage({ src, alt, className, imgClassName }) {
-  const { ref, shouldLoad } = useDeferredAsset()
-
+function SoundIcon() {
   return (
-    <div ref={ref} className={className}>
-      {shouldLoad ? (
-        <img className={imgClassName} src={src} alt={alt} loading="lazy" decoding="async" />
-      ) : (
-        <div className="media-placeholder" aria-hidden="true" />
-      )}
-    </div>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M5 14H2V10H5L10 6V18L5 14Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 9.5C15.3333 10.5 16 11.3333 16 12C16 12.6667 15.3333 13.5 14 14.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16.75 7C18.9167 8.66667 20 10.3333 20 12C20 13.6667 18.9167 15.3333 16.75 17"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
   )
 }
 
-function DeferredIframe({
-  title,
-  src,
-  width,
-  height,
-  allow,
-  className,
-  loading = 'lazy',
-  allowFullScreen,
-  referrerPolicy,
-}) {
-  const { ref, shouldLoad } = useDeferredAsset('320px')
-  const frameHeight = typeof height === 'number' ? `${height}px` : height
+function AmbientIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M3 14C4.4 11.2 6.13333 9.8 8.2 9.8C10.2667 9.8 11.7 11.2 12.5 14C13.1667 16.1333 14.5 17.2 16.5 17.2C18.5 17.2 20 16.1333 21 14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3 10.5C4.26667 8.5 5.83333 7.5 7.7 7.5C9.56667 7.5 10.9667 8.5 11.9 10.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12.6 10.5C13.4667 8.5 14.8 7.5 16.6 7.5C18.4 7.5 19.8667 8.5 21 10.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function ThemeIcon({ dark }) {
+  if (dark) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M11 3.25C7 3.8 4 7.2 4 11.3C4 15.8 7.7 19.5 12.2 19.5C16.3 19.5 19.7 16.5 20.25 12.5C19 13.4 17.45 13.9 15.8 13.9C11.45 13.9 8 10.45 8 6.1C8 4.45 8.5 2.95 9.4 1.75C9.85 1.65 10.4 1.65 11 3.25Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
+  }
 
   return (
-    <div ref={ref} className={className} style={{ minHeight: frameHeight }}>
-      {shouldLoad ? (
-        <iframe
-          title={title}
-          src={src}
-          width={width}
-          height={height}
-          allow={allow}
-          loading={loading}
-          allowFullScreen={allowFullScreen}
-          referrerPolicy={referrerPolicy}
-        />
-      ) : (
-        <div className="media-placeholder embed-placeholder" aria-hidden="true" />
-      )}
-    </div>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M12 2.75V5.1" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M12 18.9V21.25" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M21.25 12H18.9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M5.1 12H2.75" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M18.55 5.45L16.9 7.1" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M7.1 16.9L5.45 18.55" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M18.55 18.55L16.9 16.9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M7.1 7.1L5.45 5.45" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
   )
 }
 
@@ -387,6 +397,7 @@ function App() {
   const [activeAudioPanel, setActiveAudioPanel] = useState('vocal')
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem(STORAGE_SOUND) === 'true')
   const [experienceMode, setExperienceMode] = useState(() => localStorage.getItem(STORAGE_EXPERIENCE) === 'true')
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem(STORAGE_THEME) || 'light')
   const [activeSection, setActiveSection] = useState('top')
 
   const ensureEngine = () => {
@@ -433,8 +444,30 @@ function App() {
   }, [experienceMode])
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_THEME, themeMode)
+    document.documentElement.dataset.theme = themeMode
+  }, [themeMode])
+
+  useEffect(() => {
     engineRef.current?.setSection(activeSection)
   }, [activeSection])
+
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 0
+      engineRef.current?.setScrollProgress(progress)
+    }
+
+    updateScrollProgress()
+    window.addEventListener('scroll', updateScrollProgress, { passive: true })
+    window.addEventListener('resize', updateScrollProgress)
+
+    return () => {
+      window.removeEventListener('scroll', updateScrollProgress)
+      window.removeEventListener('resize', updateScrollProgress)
+    }
+  }, [])
 
   useEffect(() => {
     const ids = ['top', 'featured', 'listening-room', 'games', 'services', 'contact']
@@ -529,28 +562,54 @@ function App() {
     setActiveAudioPanel(panel)
   }
 
+  const handleThemeToggle = () => {
+    ensureEngine()?.playFeedback('theme')
+    setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'))
+  }
+
   return (
     <div className="portfolio-shell" ref={shellRef}>
       <div className="audio-dock">
         <button
           type="button"
-          className={`audio-chip${soundEnabled ? ' active' : ''}`}
+          className={`audio-chip icon-chip${soundEnabled ? ' active' : ''}`}
           onClick={handleSoundToggle}
+          aria-pressed={soundEnabled}
+          aria-label={soundEnabled ? 'Turn sound off' : 'Turn sound on'}
+          title={soundEnabled ? 'Sound on' : 'Sound off'}
         >
-          {soundEnabled ? 'Sound On' : 'Sound Off'}
+          <SoundIcon />
+          <span className="sr-only">{soundEnabled ? 'Sound on' : 'Sound off'}</span>
         </button>
         <button
           type="button"
-          className={`audio-chip secondary${experienceMode ? ' active' : ''}`}
+          className={`audio-chip secondary icon-chip${experienceMode ? ' active' : ''}`}
           onClick={handleExperienceToggle}
+          aria-pressed={experienceMode}
+          aria-label={experienceMode ? 'Turn ambient mode off' : 'Turn ambient mode on'}
+          title={experienceMode ? 'Ambient mode on' : 'Ambient mode off'}
         >
-          {experienceMode ? 'Ambient Mode' : 'Ambient Off'}
+          <AmbientIcon />
+          <span className="sr-only">{experienceMode ? 'Ambient mode on' : 'Ambient mode off'}</span>
+        </button>
+        <button
+          type="button"
+          className={`audio-chip icon-chip${themeMode === 'dark' ? ' active' : ''}`}
+          onClick={handleThemeToggle}
+          aria-pressed={themeMode === 'dark'}
+          aria-label={themeMode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={themeMode === 'dark' ? 'Dark theme on' : 'Light theme on'}
+        >
+          <ThemeIcon dark={themeMode === 'dark'} />
+          <span className="sr-only">{themeMode === 'dark' ? 'Dark theme on' : 'Light theme on'}</span>
         </button>
       </div>
 
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Vinayak Arora portfolio home" onClick={handleNavClick} {...attachHover(0)}>
-          <span className="brand-mark">VA</span>
+          <span className="brand-mark brand-photo-mark">
+            <img src="/images/radisson-blu-upright.jpg" alt="Vinayak Arora performing live" />
+          </span>
           <span className="brand-copy">
             <strong>Vinayak Arora</strong>
             <span>Composer, producer, sound designer</span>
@@ -592,50 +651,8 @@ function App() {
               </a>
             </div>
 
-            <div className="hero-stats" aria-label="Portfolio focus">
-              <article {...attachHover(4)}>
-                <strong>4</strong>
-                <span>creative lanes</span>
-              </article>
-              <article {...attachHover(5)}>
-                <strong>20+</strong>
-                <span>projects and destinations</span>
-              </article>
-              <article {...attachHover(6)}>
-                <strong>FMOD</strong>
-                <span>to songwriting</span>
-              </article>
-            </div>
           </div>
 
-          <div className="hero-visual">
-            <div className="signal-panel" {...attachHover(7)}>
-              <p className="panel-label">Live signal</p>
-              <h2>From game audio systems to vocal releases and teaching reels.</h2>
-              <div className="signal-track">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="signal-links">
-                {signalLinks.map((item, index) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={handleActionClick}
-                    {...attachHover(index + 8)}
-                  >
-                    {item.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
         </section>
 
         <section className="featured-section" id="featured">
@@ -669,7 +686,9 @@ function App() {
               {activeSectionData.items.map((item, index) => (
                 <article className="work-card" key={item.title} {...attachHover(index + 20)}>
                   <div className="work-cover">
-                    <DeferredImage src={item.image} alt={item.title} className="work-cover-media" imgClassName="work-cover-image" />
+                    <div className="work-cover-media">
+                      <img className="work-cover-image" src={item.image} alt={item.title} loading="lazy" decoding="async" />
+                    </div>
                     <span>{item.role}</span>
                   </div>
                   <div className="work-copy">
@@ -711,13 +730,13 @@ function App() {
             <article className="playlist-panel" {...attachHover(32)}>
               <p className="panel-label">Spotify playlist</p>
               <h3>Listen on Spotify</h3>
-              <DeferredIframe
-                className="deferred-embed"
+              <iframe
                 title="Vinayak Arora Spotify playlist"
                 src={listeningRoom.playlist}
                 width="100%"
                 height="352"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
               />
             </article>
 
@@ -771,24 +790,24 @@ function App() {
               <div className={`embed-grid${activeAudioPanel === 'live' ? ' video-grid' : ''}`}>
                 {audioPanels[activeAudioPanel].map((item, index) =>
                   typeof item === 'string' ? (
-                    <DeferredIframe
+                    <iframe
                       key={item}
-                      className="deferred-embed"
                       title={`${activeAudioPanel}-${index}`}
                       src={item}
                       width="100%"
                       height="152"
                       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
                     />
                   ) : (
                     <article className="video-card" key={item.href} {...attachHover(index + 40)}>
-                      <DeferredIframe
-                        className="deferred-embed"
+                      <iframe
                         title={item.title}
                         src={item.href}
                         width="100%"
                         height="220"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        loading="lazy"
                         referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
                       />
@@ -811,7 +830,9 @@ function App() {
             {games.map((game, index) => (
               <article className="game-card" key={game.title} {...attachHover(index + 48)}>
                 <div className="game-art">
-                  <DeferredImage src={game.image} alt={game.title} className="game-art-media" imgClassName="game-art-image" />
+                  <div className="game-art-media">
+                    <img className="game-art-image" src={game.image} alt={game.title} loading="lazy" decoding="async" />
+                  </div>
                 </div>
                 <div className="game-copy">
                   <p className="panel-label">Gamegrafter&apos;s Collective</p>

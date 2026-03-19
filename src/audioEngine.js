@@ -3,8 +3,8 @@ const AUDIO_FILES = {
   brand: '/audio/brand-sonic-logo.ogg',
   click: '/audio/ui-click.ogg',
   feedback: '/audio/ui-feedback.ogg',
-  whoosh: '/audio/ui-open-whoosh.ogg',
   random: '/audio/ui-random.ogg',
+  windScroll: '/audio/wind-scroll.ogg',
 }
 
 const SECTION_INTENSITY = {
@@ -26,10 +26,8 @@ export class SiteAudioEngine {
     this.experienceMode = false
     this.activeSection = 'top'
     this.sectionCooldown = 0
-    this.hoverCooldown = 0
-    this.whooshIndex = 0
     this.audioReady = typeof window !== 'undefined' && typeof Audio !== 'undefined'
-    this.assets = new Map()
+    this.assetTemplates = new Map()
     this.ambient = null
     this.ambientContext = null
     this.ambientSource = null
@@ -38,23 +36,20 @@ export class SiteAudioEngine {
     this.ambientDelay = null
     this.ambientFeedback = null
     this.ambientLfo = null
+    this.wind = null
+    this.windContext = null
+    this.windSource = null
+    this.windGain = null
+    this.windFilter = null
+    this.scrollProgress = 0
+    this.scrollActive = false
+    this.scrollIdleTimeout = null
   }
 
   async init() {
-    if (!this.audioReady || this.assets.size > 0) {
+    if (!this.audioReady) {
       return
     }
-
-    Object.entries(AUDIO_FILES).forEach(([key, src]) => {
-      if (key === 'ambientHome') {
-        this.assets.set(key, src)
-        return
-      }
-
-      const audio = new Audio(src)
-      audio.preload = 'auto'
-      this.assets.set(key, audio)
-    })
   }
 
   async setEnabled(value) {
@@ -65,8 +60,11 @@ export class SiteAudioEngine {
     }
 
     await this.init()
+    this._primeAsset('brand')
+    this._primeAsset('click')
     this.playIdentity()
     this._updateAmbient()
+    this._updateWindScroll()
   }
 
   setExperienceMode(value) {
@@ -75,6 +73,7 @@ export class SiteAudioEngine {
       this.playFeedback('experience')
     }
     this._updateAmbient()
+    this._updateWindScroll()
   }
 
   setSection(section) {
@@ -84,21 +83,7 @@ export class SiteAudioEngine {
 
     this.activeSection = section
     this._updateAmbient()
-
-    if (!this.enabled || !this.experienceMode) {
-      return
-    }
-
-    const now = Date.now()
-    if (now - this.sectionCooldown < 900) {
-      return
-    }
-
-    this.sectionCooldown = now
-    this._play('whoosh', {
-      volume: 0.05 * (SECTION_INTENSITY[section] ?? 0.84),
-      playbackRate: clamp(0.92 + (SECTION_INTENSITY[section] ?? 0.84) * 0.18, 0.9, 1.06),
-    })
+    this._updateWindScroll()
   }
 
   playIdentity() {
@@ -108,26 +93,10 @@ export class SiteAudioEngine {
 
   playNav() {
     if (!this.enabled) return
-    this._play('whoosh', { volume: 0.08, playbackRate: 1.03 })
   }
 
   playHover(index = 0) {
     if (!this.enabled) return
-
-    const now = Date.now()
-    if (now - this.hoverCooldown < 120) {
-      return
-    }
-
-    this.hoverCooldown = now
-    const semitoneOffsets = [-5, -3, 0, 3, 5, -4, 2, 4]
-    const semitone = semitoneOffsets[(this.whooshIndex + index) % semitoneOffsets.length]
-    this.whooshIndex += 1
-    const playbackRate = 2 ** (semitone / 12)
-    this._play('whoosh', {
-      volume: this.experienceMode ? 0.14 : 0.1,
-      playbackRate: clamp(playbackRate, 0.74, 1.34),
-    })
   }
 
   playClick() {
@@ -151,12 +120,25 @@ export class SiteAudioEngine {
     this._play('feedback', { volume: 0.18, playbackRate: 1 })
   }
 
+  setScrollProgress(value) {
+    this.scrollProgress = clamp(value, 0, 1)
+    this.scrollActive = true
+    if (this.scrollIdleTimeout) {
+      clearTimeout(this.scrollIdleTimeout)
+    }
+    this.scrollIdleTimeout = setTimeout(() => {
+      this.scrollActive = false
+      this._updateWindScrollTone()
+    }, 220)
+    this._updateWindScrollTone()
+  }
+
   _play(key, options = {}) {
     if (!this.audioReady) {
       return
     }
 
-    const source = this.assets.get(key)
+    const source = this._ensureTemplate(key)
     if (!source) {
       return
     }
@@ -170,7 +152,15 @@ export class SiteAudioEngine {
 
   dispose() {
     this._stopAmbient()
-    this.assets.clear()
+    this._stopWindScroll()
+    if (this.scrollIdleTimeout) {
+      clearTimeout(this.scrollIdleTimeout)
+    }
+    this.assetTemplates.forEach((audio) => {
+      audio.pause()
+      audio.src = ''
+    })
+    this.assetTemplates.clear()
   }
 
   _updateAmbient() {
@@ -179,19 +169,18 @@ export class SiteAudioEngine {
       return
     }
 
-    const ambientSrc = this.assets.get('ambientHome')
-    if (!ambientSrc) return
+    const ambientSrc = AUDIO_FILES.ambientHome
 
     if (!this.ambient) {
       this.ambient = new Audio(ambientSrc)
-      this.ambient.preload = 'auto'
+      this.ambient.preload = 'metadata'
       this.ambient.loop = true
-      this.ambient.volume = 0.18
+      this.ambient.volume = 0.11
       this._setupAmbientFx()
     }
 
     this.ambient.loop = true
-    this.ambient.volume = 0.18
+    this.ambient.volume = 0.11
     if (this.ambient.paused) {
       this.ambient.currentTime = 0
       this.ambient.play().catch(() => {})
@@ -201,6 +190,68 @@ export class SiteAudioEngine {
   _stopAmbient() {
     if (!this.ambient) return
     this.ambient.pause()
+  }
+
+  _updateWindScroll() {
+    if (!this.enabled) {
+      this._stopWindScroll()
+      return
+    }
+
+    if (!this.wind) {
+      this.wind = new Audio(AUDIO_FILES.windScroll)
+      this.wind.preload = 'metadata'
+      this.wind.loop = true
+      this.wind.volume = 1
+      this._setupWindFx()
+    }
+
+    if (this.windContext?.state === 'suspended') {
+      this.windContext.resume().catch(() => {})
+    }
+
+    this._updateWindScrollTone()
+
+    if (this.wind.paused) {
+      this.wind.currentTime = 0
+      this.wind.play().catch(() => {})
+    }
+  }
+
+  _stopWindScroll() {
+    if (!this.wind) return
+    this.wind.pause()
+  }
+
+  _ensureTemplate(key) {
+    if (key === 'ambientHome') {
+      return null
+    }
+
+    const existing = this.assetTemplates.get(key)
+    if (existing) {
+      return existing
+    }
+
+    const src = AUDIO_FILES[key]
+    if (!src) {
+      return null
+    }
+
+    const audio = new Audio(src)
+    audio.preload = 'metadata'
+    this.assetTemplates.set(key, audio)
+    return audio
+  }
+
+  _primeAsset(key) {
+    const audio = this._ensureTemplate(key)
+    if (!audio) {
+      return
+    }
+
+    audio.preload = 'auto'
+    audio.load()
   }
 
   _setupAmbientFx() {
@@ -220,7 +271,7 @@ export class SiteAudioEngine {
       const lfoDepth = this.ambientContext.createGain()
 
       this.ambientDryGain.gain.value = 0.82
-      this.ambientWetGain.gain.value = 0.22
+      this.ambientWetGain.gain.value = 0.16
       this.ambientDelay.delayTime.value = 0.22
       this.ambientFeedback.gain.value = 0.28
       this.ambientLfo.type = 'sine'
@@ -242,5 +293,47 @@ export class SiteAudioEngine {
     } catch (error) {
       console.error('Ambient FX init failed:', error)
     }
+  }
+
+  _setupWindFx() {
+    if (!this.wind || this.windContext || typeof window === 'undefined') return
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextClass) return
+
+    try {
+      this.windContext = new AudioContextClass()
+      this.windSource = this.windContext.createMediaElementSource(this.wind)
+      this.windFilter = this.windContext.createBiquadFilter()
+      this.windGain = this.windContext.createGain()
+
+      this.windFilter.type = 'lowpass'
+      this.windFilter.frequency.value = 700
+      this.windGain.gain.value = 0.028
+
+      this.windSource.connect(this.windFilter)
+      this.windFilter.connect(this.windGain)
+      this.windGain.connect(this.windContext.destination)
+    } catch (error) {
+      console.error('Wind FX init failed:', error)
+    }
+  }
+
+  _updateWindScrollTone() {
+    if (!this.windFilter || !this.windGain || !this.windContext) return
+
+    const progress = this.scrollProgress
+    const currentTime = this.windContext.currentTime
+    const activityBoost = this.scrollActive ? 1 : 0
+    const targetGain = 0.026 + progress * 0.052 + activityBoost * (0.12 + progress * 0.12)
+    const idleFrequency = 900 + progress * 1300
+    const activeFrequency = 1800 * ((16000 / 1800) ** progress)
+    const targetFrequency = this.scrollActive ? activeFrequency : idleFrequency
+
+    this.windGain.gain.cancelScheduledValues(currentTime)
+    this.windGain.gain.setTargetAtTime(targetGain, currentTime, this.scrollActive ? 0.08 : 0.32)
+
+    this.windFilter.frequency.cancelScheduledValues(currentTime)
+    this.windFilter.frequency.setTargetAtTime(targetFrequency, currentTime, this.scrollActive ? 0.08 : 0.32)
   }
 }
