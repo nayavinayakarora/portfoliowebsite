@@ -315,7 +315,7 @@ const contactActions = [
     title: 'Email',
     icon: 'email',
     body: 'For collaborations, commissions, teaching enquiries, and project conversations.',
-    href: 'mailto:hello@vinayakarora.com',
+    href: 'mailto:vinayakarorayt@gmail.com',
     cta: 'Send email',
   },
   {
