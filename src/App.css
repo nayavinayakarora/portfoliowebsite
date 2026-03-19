@@ -407,7 +407,7 @@ main,
 
 .hero-entity-background .hero-scene-shell {
   position: absolute;
-  inset: -3% -2%;
+  inset: -1% -1%;
 }
 
 .hero-entity-background .hero-mobile-fallback {
@@ -1778,6 +1778,24 @@ main,
 }
 
 @media (max-width: 860px) {
+  .hero-section-with-bg {
+    min-height: calc(100svh - 4.9rem);
+  }
+
+  .hero-entity-background .hero-scene-shell {
+    inset: 0;
+  }
+
+  .hero-section-with-bg .hero-copy--foreground {
+    padding: 1.1rem 0.35rem 1.5rem;
+  }
+
+  .hero-entity-scrim {
+    background:
+      radial-gradient(circle at 50% 42%, rgba(10, 14, 33, 0.1), transparent 54%),
+      linear-gradient(180deg, rgba(245, 241, 235, 0.16), rgba(245, 241, 235, 0.34));
+  }
+
   .entity-overlay {
     width: calc(100% - 1.2rem);
     left: 0.6rem;

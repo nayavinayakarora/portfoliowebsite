@@ -87,7 +87,15 @@ function Backdrop({ motionRef }) {
   )
 }
 
-function SceneGraph({ descriptors, connections, structurePositionsRef, motionRef, audioDataRef, audioReactiveEnabled }) {
+function SceneGraph({
+  descriptors,
+  connections,
+  structurePositionsRef,
+  motionRef,
+  audioDataRef,
+  audioReactiveEnabled,
+  compactView,
+}) {
   const scrollTargetRef = useRef(0)
   const keyLightRef = useRef(null)
   const rimLightRef = useRef(null)
@@ -152,9 +160,11 @@ function SceneGraph({ descriptors, connections, structurePositionsRef, motionRef
       structurePositionsRef.current[descriptor.index].copy(tempPosition.current)
     })
 
-    const cameraZ = getCameraDepthFromScroll(motion.scroll)
-    const cameraX = (pointer.x * 0.42) + (Math.sin(time * 0.15) * 0.18)
-    const cameraY = (pointer.y * 0.28) + (Math.cos(time * 0.18) * 0.14)
+    const depthOffset = compactView ? 1.85 : 0
+    const pointerScale = compactView ? 0.62 : 1
+    const cameraZ = getCameraDepthFromScroll(motion.scroll) + depthOffset
+    const cameraX = (pointer.x * 0.42 * pointerScale) + (Math.sin(time * 0.15) * 0.18)
+    const cameraY = (pointer.y * 0.28 * pointerScale) + (Math.cos(time * 0.18) * 0.14)
 
     state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, cameraX, 0.04)
     state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, cameraY, 0.04)
@@ -204,7 +214,8 @@ function SceneGraph({ descriptors, connections, structurePositionsRef, motionRef
 }
 
 export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
-  const [isMobileMode, setIsMobileMode] = useState(false)
+  const [compactView, setCompactView] = useState(false)
+  const [reducedMotionMode, setReducedMotionMode] = useState(false)
   const descriptors = useMemo(() => buildStructureDescriptors(), [])
   const connections = useMemo(() => buildSignalConnections(descriptors.length), [descriptors.length])
 
@@ -224,11 +235,12 @@ export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
   })
 
   useEffect(() => {
-    const query = window.matchMedia('(max-width: 860px), (pointer: coarse)')
+    const query = window.matchMedia('(max-width: 860px)')
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     const sync = () => {
-      setIsMobileMode(query.matches || reducedMotion.matches)
+      setCompactView(query.matches)
+      setReducedMotionMode(reducedMotion.matches)
     }
 
     sync()
@@ -241,7 +253,7 @@ export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
     }
   }, [])
 
-  if (isMobileMode) {
+  if (reducedMotionMode) {
     return (
       <div className="hero-mobile-fallback" aria-label="Living Sound Entity mobile fallback">
         <div className="hero-mobile-gradient" />
@@ -253,8 +265,8 @@ export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
   return (
     <div className="hero-scene-shell" aria-hidden="true">
       <Canvas
-        camera={{ fov: 45, position: [0, 0, 8], near: 0.1, far: 60 }}
-        dpr={[1, 1.5]}
+        camera={{ fov: compactView ? 54 : 45, position: [0, 0, compactView ? 10.4 : 8], near: 0.1, far: 60 }}
+        dpr={compactView ? [1, 1.2] : [1, 1.5]}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
       >
         <AdaptiveDpr pixelated />
@@ -265,6 +277,7 @@ export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
           motionRef={motionRef}
           audioDataRef={audioDataRef}
           audioReactiveEnabled={audioReactiveEnabled}
+          compactView={compactView}
         />
       </Canvas>
     </div>
