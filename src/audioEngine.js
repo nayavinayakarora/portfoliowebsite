@@ -52,7 +52,7 @@ export class SiteAudioEngine {
     }
   }
 
-  async setEnabled(value) {
+  async setEnabled(value, options = {}) {
     this.enabled = value
     if (!value) {
       this._stopAmbient()
@@ -62,7 +62,9 @@ export class SiteAudioEngine {
     await this.init()
     this._primeAsset('brand')
     this._primeAsset('click')
-    this.playIdentity()
+    if (!options.silent) {
+      this.playIdentity()
+    }
     this._updateAmbient()
     this._updateWindScroll()
   }
@@ -129,7 +131,7 @@ export class SiteAudioEngine {
     this.scrollIdleTimeout = setTimeout(() => {
       this.scrollActive = false
       this._updateWindScrollTone()
-    }, 220)
+    }, 90)
     this._updateWindScrollTone()
   }
 
@@ -331,9 +333,9 @@ export class SiteAudioEngine {
     const targetFrequency = this.scrollActive ? activeFrequency : idleFrequency
 
     this.windGain.gain.cancelScheduledValues(currentTime)
-    this.windGain.gain.setTargetAtTime(targetGain, currentTime, this.scrollActive ? 0.08 : 0.32)
+    this.windGain.gain.setTargetAtTime(targetGain, currentTime, this.scrollActive ? 0.05 : 0.12)
 
     this.windFilter.frequency.cancelScheduledValues(currentTime)
-    this.windFilter.frequency.setTargetAtTime(targetFrequency, currentTime, this.scrollActive ? 0.08 : 0.32)
+    this.windFilter.frequency.setTargetAtTime(targetFrequency, currentTime, this.scrollActive ? 0.05 : 0.12)
   }
 }

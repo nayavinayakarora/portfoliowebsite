@@ -265,6 +265,40 @@ const listeningRoom = {
   ],
 }
 
+const eotd = {
+  title: 'EOTD - A Daily Moment of Music',
+  intro:
+    'For over four years, I have maintained a personal musical discipline called EOTD (End Of The Day) - a daily ritual where I go live on Instagram and share a spontaneous moment of music. What started as a simple consistency challenge evolved into a long-term artistic documentation of growth, experimentation, and musical storytelling.',
+  body: [
+    'Every session is different. Some days focus on vocal harmony, some on arrangement ideas, some on improvisation, sound design, or re-imagined versions of songs. The idea is simple: show up every day, create something honest, and let consistency shape artistry.',
+    'This practice reflects my belief that musicianship is not just about big releases or performances, but about daily engagement with sound - treating music like a living, breathing practice rather than an occasional outcome.',
+  ],
+  highlights: [
+    'A documentation of musical evolution',
+    'A laboratory for testing ideas',
+    'A discipline in creative consistency',
+    'A way to stay connected with listeners in real time',
+    'A personal archive of over 1000+ days of music',
+  ],
+  outro:
+    'I document these sessions on YouTube and Instagram as part of an ongoing creative journal.',
+  links: [
+    { label: 'Watch on YouTube', href: 'https://www.youtube.com/@vinayakaroraeotd' },
+    { label: 'Join on Instagram', href: 'https://www.instagram.com/vinayak.arora/' },
+  ],
+  sessions: [
+    { href: 'https://www.youtube.com/watch?v=m1vHmpnnyjc', videoId: 'm1vHmpnnyjc', embed: 'https://www.youtube-nocookie.com/embed/m1vHmpnnyjc?rel=0', title: 'EOTD 1000! 🏆' },
+    { href: 'https://www.youtube.com/watch?v=iDqfHxVzLc0', videoId: 'iDqfHxVzLc0', embed: 'https://www.youtube-nocookie.com/embed/iDqfHxVzLc0?rel=0', title: 'EOTD 400' },
+    { href: 'https://www.youtube.com/watch?v=VsV_L125HqM', videoId: 'VsV_L125HqM', embed: 'https://www.youtube-nocookie.com/embed/VsV_L125HqM?rel=0', title: 'EOTD 1542 Part 2' },
+    { href: 'https://www.youtube.com/watch?v=2nuQVzx9hhk', videoId: '2nuQVzx9hhk', embed: 'https://www.youtube-nocookie.com/embed/2nuQVzx9hhk?rel=0', title: 'EOTD 1379' },
+    { href: 'https://www.youtube.com/watch?v=kR239UOPSIQ', videoId: 'kR239UOPSIQ', embed: 'https://www.youtube-nocookie.com/embed/kR239UOPSIQ?rel=0', title: 'EOTD 1296' },
+    { href: 'https://www.youtube.com/watch?v=gEQcofBlL4c', videoId: 'gEQcofBlL4c', embed: 'https://www.youtube-nocookie.com/embed/gEQcofBlL4c?rel=0', title: 'EOTD 282' },
+    { href: 'https://www.youtube.com/watch?v=BHOZTAa3yzc', videoId: 'BHOZTAa3yzc', embed: 'https://www.youtube-nocookie.com/embed/BHOZTAa3yzc?rel=0', title: 'EOTD 1289' },
+    { href: 'https://www.youtube.com/watch?v=KLBqRQSg7-o', videoId: 'KLBqRQSg7-o', embed: 'https://www.youtube-nocookie.com/embed/KLBqRQSg7-o?rel=0', title: 'EOTD 1162' },
+    { href: 'https://www.youtube.com/watch?v=0FoNn_UwjW4', videoId: '0FoNn_UwjW4', embed: 'https://www.youtube-nocookie.com/embed/0FoNn_UwjW4?rel=0', title: 'EOTD 1105' },
+  ],
+}
+
 const services = [
   'Sound Design',
   'Music Production',
@@ -279,18 +313,21 @@ const services = [
 const contactActions = [
   {
     title: 'Email',
+    icon: 'email',
     body: 'For collaborations, commissions, teaching enquiries, and project conversations.',
     href: 'mailto:hello@vinayakarora.com',
     cta: 'Send email',
   },
   {
     title: 'Instagram',
+    icon: 'instagram',
     body: 'Follow current work, releases, and behind-the-scenes updates.',
     href: 'https://www.instagram.com/vinayak.arora/',
     cta: 'Open Instagram',
   },
   {
     title: 'LinkedIn',
+    icon: 'linkedin',
     body: 'Connect for professional opportunities, studio work, and long-form profile details.',
     href: 'https://www.linkedin.com/in/vinayak-arora-26735312b/',
     cta: 'Open LinkedIn',
@@ -300,6 +337,13 @@ const contactActions = [
 const STORAGE_SOUND = 'vinay-portfolio-sound-enabled'
 const STORAGE_EXPERIENCE = 'vinay-portfolio-experience-mode'
 const STORAGE_THEME = 'vinay-portfolio-theme'
+const NAV_ITEMS = [
+  ['Featured', 'featured'],
+  ['Listening Room', 'listening-room'],
+  ['Games', 'games'],
+  ['Services', 'services'],
+  ['Contact', 'contact'],
+]
 
 function SoundIcon() {
   return (
@@ -334,26 +378,12 @@ function AmbientIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path
-        d="M3 14C4.4 11.2 6.13333 9.8 8.2 9.8C10.2667 9.8 11.7 11.2 12.5 14C13.1667 16.1333 14.5 17.2 16.5 17.2C18.5 17.2 20 16.1333 21 14"
+        d="M9.75 5.5V14.6C9.15 14.2 8.38 14 7.45 14C5.48 14 4 15.01 4 16.45C4 17.89 5.48 18.9 7.45 18.9C9.46 18.9 10.95 17.78 10.95 16.1V8.8L18.8 7.1V12.95C18.2 12.55 17.43 12.35 16.5 12.35C14.53 12.35 13.05 13.36 13.05 14.8C13.05 16.24 14.53 17.25 16.5 17.25C18.51 17.25 20 16.13 20 14.45V4L9.75 5.5Z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      <path
-        d="M3 10.5C4.26667 8.5 5.83333 7.5 7.7 7.5C9.56667 7.5 10.9667 8.5 11.9 10.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12.6 10.5C13.4667 8.5 14.8 7.5 16.6 7.5C18.4 7.5 19.8667 8.5 21 10.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
       />
     </svg>
   )
@@ -390,12 +420,115 @@ function ThemeIcon({ dark }) {
   )
 }
 
+function MenuIcon({ open }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {open ? (
+        <>
+          <path
+            d="M6.5 6.5L17.5 17.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M17.5 6.5L6.5 17.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </>
+      ) : (
+        <>
+          <path d="M4.5 7.5H19.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M4.5 12H19.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M4.5 16.5H19.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+function EmailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.5 6.5H20.5V17.5H3.5V6.5Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M4.5 7.5L12 13L19.5 7.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="4.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="3.7" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="17.1" cy="6.9" r="0.9" fill="currentColor" />
+    </svg>
+  )
+}
+
+function LinkedinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.2 9.1V18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M6.2 6.2H6.21" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M11 18V9.1" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M11 11.7C11.65 10.2333 12.85 9.5 14.6 9.5C17.25 9.5 18.8 11.15 18.8 14.45V18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CoffeeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 10H15.5V13.5C15.5 16.2614 13.2614 18.5 10.5 18.5C7.73858 18.5 5.5 16.2614 5.5 13.5V10Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M15.5 11H17.2C18.7464 11 20 12.2536 20 13.8C20 15.3464 18.7464 16.6 17.2 16.6H15.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.6 5.6C8.2 6.2 8.2 6.9 7.6 7.7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M11 4.8C11.6 5.4 11.6 6.1 11 6.9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function DocumentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3.75H13.5L18 8.25V20.25H7V3.75Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M13.5 3.75V8.25H18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M9.5 12H15.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M9.5 15.5H15.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function LinkIcon({ type }) {
+  switch (type) {
+    case 'email':
+      return <EmailIcon />
+    case 'instagram':
+      return <InstagramIcon />
+    case 'linkedin':
+      return <LinkedinIcon />
+    case 'coffee':
+      return <CoffeeIcon />
+    case 'document':
+      return <DocumentIcon />
+    default:
+      return <ThemeIcon dark={false} />
+  }
+}
+
 function App() {
   const shellRef = useRef(null)
   const engineRef = useRef(null)
   const [activeCollection, setActiveCollection] = useState(featuredCollections[0].id)
   const [activeAudioPanel, setActiveAudioPanel] = useState('vocal')
-  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem(STORAGE_SOUND) === 'true')
+  const [isEotdOpen, setIsEotdOpen] = useState(false)
+  const [activeEotdSession, setActiveEotdSession] = useState(() => eotd.sessions[1] ?? eotd.sessions[0])
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem(STORAGE_SOUND) !== 'false')
   const [experienceMode, setExperienceMode] = useState(() => localStorage.getItem(STORAGE_EXPERIENCE) === 'true')
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem(STORAGE_THEME) || 'light')
   const [activeSection, setActiveSection] = useState('top')
@@ -404,6 +537,13 @@ function App() {
     if (!engineRef.current) {
       try {
         engineRef.current = new SiteAudioEngine()
+        engineRef.current.setExperienceMode(experienceMode)
+        if (soundEnabled) {
+          engineRef.current.setEnabled(true, { silent: true }).catch((error) => {
+            console.error('Audio enable failed:', error)
+            setSoundEnabled(false)
+          })
+        }
       } catch (error) {
         console.error('Audio engine init failed:', error)
         return null
@@ -435,6 +575,12 @@ function App() {
         console.error('Audio enable failed:', error)
         setSoundEnabled(false)
       })
+    }
+  }, [soundEnabled])
+
+  useEffect(() => {
+    if (soundEnabled) {
+      ensureEngine()
     }
   }, [soundEnabled])
 
@@ -519,6 +665,18 @@ function App() {
     live: 'Live Videos',
   }
 
+  const currentNavTarget = activeSection === 'top' ? 'featured' : activeSection
+  const footerLinks = [
+    { label: 'Instagram', href: 'https://www.instagram.com/vinayak.arora/', icon: 'instagram' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/vinayak-arora-26735312b/', icon: 'linkedin' },
+    { label: 'Buy Me a Coffee', href: 'https://buymeacoffee.com/vinayakarora', icon: 'coffee' },
+    {
+      label: 'Resume PDF',
+      href: 'https://media.journoportfolio.com/users/413008/uploads/935497f9-de02-4171-a069-57d961a23c8e.pdf',
+      icon: 'document',
+    },
+  ]
+
   const attachHover = (index = 0) => ({
     onMouseEnter: () => engineRef.current?.playHover(index),
     onFocus: () => engineRef.current?.playHover(index),
@@ -531,6 +689,9 @@ function App() {
     try {
       await engine.setEnabled(nextValue)
       setSoundEnabled(nextValue)
+      if (nextValue) {
+        engine.playClick()
+      }
     } catch (error) {
       console.error('Sound toggle failed:', error)
       setSoundEnabled(false)
@@ -538,37 +699,76 @@ function App() {
   }
 
   const handleExperienceToggle = () => {
-    const engine = ensureEngine()
-    if (!engine) return
-    engine.playFeedback('experience')
+    if (!ensureEngine()) return
     setExperienceMode((current) => !current)
   }
 
-  const handleNavClick = () => {
-    ensureEngine()?.playNav()
-  }
-
-  const handleActionClick = () => {
+  const handleActionClick = (event) => {
+    event?.stopPropagation?.()
     ensureEngine()?.playClick()
   }
 
+  const handleSectionNav = (sectionId) => {
+    ensureEngine()?.playClick()
+    setIsMobileMenuOpen(false)
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const handleCollectionSwitch = (sectionId) => {
-    ensureEngine()?.playDropdown()
+    const engine = ensureEngine()
+    engine?.playDropdown()
     setActiveCollection(sectionId)
   }
 
   const handleAudioSwitch = (panel) => {
-    ensureEngine()?.playDropdown()
+    const engine = ensureEngine()
+    engine?.playDropdown()
     setActiveAudioPanel(panel)
   }
 
   const handleThemeToggle = () => {
-    ensureEngine()?.playFeedback('theme')
+    ensureEngine()
     setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'))
   }
 
+  const handleMobileMenuToggle = () => {
+    ensureEngine()?.playClick()
+    setIsMobileMenuOpen((current) => !current)
+  }
+
+  const handleEotdToggle = () => {
+    ensureEngine()?.playClick()
+    setIsEotdOpen((current) => !current)
+  }
+
+  const handleEotdSessionSelect = (session) => {
+    ensureEngine()?.playClick()
+    setActiveEotdSession(session)
+  }
+
+  const handleGlobalClick = (event) => {
+    if (!(event.target instanceof Element)) {
+      return
+    }
+
+    const interactive = event.target.closest('a, button, [role="button"]')
+    if (!interactive) {
+      return
+    }
+
+    if (interactive.closest('.site-header')) {
+      return
+    }
+
+    if (interactive instanceof HTMLElement && interactive.dataset.soundVariant === 'random') {
+      return
+    }
+
+    ensureEngine()?.playClick()
+  }
+
   return (
-    <div className="portfolio-shell" ref={shellRef}>
+    <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
       <div className="audio-dock">
         <button
           type="button"
@@ -586,11 +786,11 @@ function App() {
           className={`audio-chip secondary icon-chip${experienceMode ? ' active' : ''}`}
           onClick={handleExperienceToggle}
           aria-pressed={experienceMode}
-          aria-label={experienceMode ? 'Turn ambient mode off' : 'Turn ambient mode on'}
-          title={experienceMode ? 'Ambient mode on' : 'Ambient mode off'}
+          aria-label={experienceMode ? 'Turn audio experience off' : 'Turn audio experience on'}
+          title={experienceMode ? 'Audio experience on' : 'Audio experience off'}
         >
           <AmbientIcon />
-          <span className="sr-only">{experienceMode ? 'Ambient mode on' : 'Ambient mode off'}</span>
+          <span className="sr-only">{experienceMode ? 'Audio experience on' : 'Audio experience off'}</span>
         </button>
         <button
           type="button"
@@ -605,37 +805,57 @@ function App() {
         </button>
       </div>
 
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Vinayak Arora portfolio home" onClick={handleNavClick} {...attachHover(0)}>
-          <span className="brand-mark brand-photo-mark">
-            <img src="/images/radisson-blu-upright.jpg" alt="Vinayak Arora performing live" />
-          </span>
-          <span className="brand-copy">
-            <strong>Vinayak Arora</strong>
-            <span>Composer, producer, sound designer</span>
-          </span>
-        </a>
+      <div className="portfolio-layout">
+        <header className="site-header">
+          <div className="site-header-bar">
+            <button
+              type="button"
+              className="brand brand-button"
+              aria-label="Vinayak Arora portfolio home"
+              onClick={() => handleSectionNav('top')}
+              {...attachHover(0)}
+            >
+              <span className="brand-mark brand-photo-mark">
+                <img src="/images/radisson-blu-upright.jpg" alt="Vinayak Arora performing live" />
+              </span>
+              <span className="brand-copy">
+                <strong>Vinayak Arora</strong>
+                <span>Composer, producer, sound designer</span>
+              </span>
+            </button>
 
-        <nav className="site-nav" aria-label="Primary">
-          {[
-            ['Featured', '#featured'],
-            ['Listening Room', '#listening-room'],
-            ['Games', '#games'],
-            ['Services', '#services'],
-            ['Contact', '#contact'],
-          ].map(([label, href], index) => (
-            <a key={label} href={href} onClick={handleNavClick} {...attachHover(index + 1)}>
-              {label}
-            </a>
-          ))}
-        </nav>
-      </header>
+            <button
+              type="button"
+              className={`menu-toggle${isMobileMenuOpen ? ' open' : ''}`}
+              aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileMenuOpen}
+              onClick={handleMobileMenuToggle}
+            >
+              <MenuIcon open={isMobileMenuOpen} />
+            </button>
 
+            <nav className={`site-nav${isMobileMenuOpen ? ' open' : ''}`} aria-label="Primary">
+              {NAV_ITEMS.map(([label, sectionId], index) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={`site-nav-link${currentNavTarget === sectionId ? ' active' : ''}`}
+                  onClick={() => handleSectionNav(sectionId)}
+                  {...attachHover(index + 1)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </header>
+
+        <div className="content-column">
       <main>
         <section className="hero-section" id="top">
           <div className="hero-copy">
             <p className="eyebrow">Composer, producer, sound designer</p>
-            <h1>Music, sound, teaching, and interactive audio in one cinematic portfolio.</h1>
+            <h1>Music, sound, teaching, and interactive audio in one cinematic space.</h1>
             <p className="hero-text">
               Vinayak Arora works across music production, sound design, teaching, and game audio.
               The portfolio brings together original releases, visual-media work, student
@@ -668,6 +888,7 @@ function App() {
                 type="button"
                 className={`filter-chip${section.id === activeCollection ? ' active' : ''}`}
                 onClick={() => handleCollectionSwitch(section.id)}
+                data-sound-variant="random"
                 {...attachHover(index + 12)}
               >
                 {section.label}
@@ -774,6 +995,7 @@ function App() {
                   type="button"
                   className={`filter-chip${activeAudioPanel === value ? ' active' : ''}`}
                   onClick={() => handleAudioSwitch(value)}
+                  data-sound-variant="random"
                   {...attachHover(index + 34)}
                 >
                   {label}
@@ -783,7 +1005,7 @@ function App() {
 
             <div className="embed-section">
               <div className="collection-copy">
-                <p className="collection-eyebrow">Interactive media wall</p>
+                <p className="collection-eyebrow">Listening collection</p>
                 <h3>{audioTitles[activeAudioPanel]}</h3>
               </div>
 
@@ -818,6 +1040,110 @@ function App() {
               </div>
             </div>
           </div>
+
+          <article className={`eotd-accordion${isEotdOpen ? ' open' : ''}`} {...attachHover(34)}>
+            <button
+              type="button"
+              className="eotd-toggle"
+              onClick={handleEotdToggle}
+              aria-expanded={isEotdOpen}
+            >
+              <span className="eotd-toggle-copy">
+                <span className="panel-label">EOTD</span>
+                <strong>{eotd.title}</strong>
+                <span>
+                  A long-running daily practice of live music, experimentation, and creative consistency.
+                </span>
+              </span>
+              <span className="eotd-toggle-indicator">{isEotdOpen ? 'Close' : 'Open'}</span>
+            </button>
+
+            {isEotdOpen ? (
+              <div className="eotd-content">
+                <div className="eotd-copy">
+                  <p>{eotd.intro}</p>
+                  {eotd.body.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                  <p>{eotd.outro}</p>
+                </div>
+
+                <div className="eotd-details">
+                  <div className="eotd-list">
+                    <p className="collection-eyebrow">What EOTD has become</p>
+                    <ul>
+                      {eotd.highlights.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="support-link-grid eotd-links">
+                    {eotd.links.map((link) => (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={handleActionClick}
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="eotd-archive">
+                  <div className="collection-copy">
+                    <p className="collection-eyebrow">Documented sessions</p>
+                    <h3>EOTD session archive</h3>
+                    <p>A selection from the long-running daily music journal, playable right here.</p>
+                  </div>
+
+                  <div className="eotd-player">
+                    <iframe
+                      title={activeEotdSession.title}
+                      src={activeEotdSession.embed}
+                      width="100%"
+                      height="360"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                    <div className="eotd-player-copy">
+                      <strong>{activeEotdSession.title}</strong>
+                      <a href={activeEotdSession.href} target="_blank" rel="noreferrer" onClick={handleActionClick}>
+                        Open on YouTube
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="eotd-card-grid">
+                    {eotd.sessions.map((session, index) => (
+                      <button
+                        type="button"
+                        className={`eotd-session-card${activeEotdSession.href === session.href ? ' active' : ''}`}
+                        key={session.href}
+                        onClick={() => handleEotdSessionSelect(session)}
+                        {...attachHover(index + 120)}
+                      >
+                        <img
+                          src={`https://img.youtube.com/vi/${session.videoId}/hqdefault.jpg`}
+                          alt={session.title}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="eotd-session-copy">
+                          <strong>{session.title}</strong>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </article>
         </section>
 
         <section className="games-section" id="games">
@@ -885,7 +1211,9 @@ function App() {
           <div className="contact-grid">
             {contactActions.map((item, index) => (
               <article className="contact-card" key={item.title} {...attachHover(index + 70)}>
-                <p className="panel-label">{item.title}</p>
+                <span className="contact-icon" aria-hidden="true">
+                  <LinkIcon type={item.icon} />
+                </span>
                 <h3>{item.title}</h3>
                 <p>{item.body}</p>
                 <a href={item.href} target="_blank" rel="noreferrer" onClick={handleActionClick}>
@@ -903,8 +1231,8 @@ function App() {
           <h2>Connect across music, collaboration, teaching, and studio work.</h2>
         </div>
 
-        <div className="footer-links">
-          {signalLinks.map((item, index) => (
+        <div className="footer-links footer-link-grid">
+          {footerLinks.map((item, index) => (
             <a
               key={item.label}
               href={item.href}
@@ -913,7 +1241,10 @@ function App() {
               onClick={handleActionClick}
               {...attachHover(index + 60)}
             >
-              {item.label}
+              <span className="footer-link-icon" aria-hidden="true">
+                <LinkIcon type={item.icon} />
+              </span>
+              <span>{item.label}</span>
             </a>
           ))}
           <a
@@ -923,10 +1254,15 @@ function App() {
             onClick={handleActionClick}
             {...attachHover(64)}
           >
-            TeevraMa Studio
+            <span className="footer-link-icon" aria-hidden="true">
+              <InstagramIcon />
+            </span>
+            <span>TeevraMa Studio</span>
           </a>
         </div>
       </footer>
+        </div>
+      </div>
     </div>
   )
 }
