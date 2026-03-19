@@ -94,6 +94,7 @@ main,
 .listening-section,
 .games-section,
 .services-section,
+.contact-section,
 .site-footer {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -207,6 +208,7 @@ main,
 .listening-section,
 .games-section,
 .services-section,
+.contact-section,
 .site-footer {
   padding-top: 4.75rem;
   padding-bottom: 4.75rem;
@@ -329,7 +331,8 @@ main,
 .hero-stats,
 .collection-grid,
 .embed-grid,
-.services-grid {
+.services-grid,
+.contact-grid {
   display: grid;
   gap: 1rem;
 }
@@ -345,6 +348,7 @@ main,
 .playlist-panel,
 .game-card,
 .service-card,
+.contact-card,
 .video-card {
   background: var(--panel);
   border: 1px solid var(--border-soft);
@@ -509,8 +513,6 @@ main,
   display: flex;
   align-items: end;
   padding: 1rem;
-  background-position: center;
-  background-size: cover;
 }
 
 .work-cover::before {
@@ -520,11 +522,12 @@ main,
   background:
     linear-gradient(180deg, rgba(22, 15, 10, 0.08), rgba(22, 15, 10, 0.82)),
     linear-gradient(145deg, rgba(72, 47, 31, 0.18), rgba(18, 12, 9, 0.72));
+  z-index: 1;
 }
 
 .work-cover span {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: inline-flex;
   padding: 0.4rem 0.7rem;
   border-radius: 999px;
@@ -533,6 +536,25 @@ main,
   color: var(--text-strong);
   font-size: 0.76rem;
   font-weight: 700;
+}
+
+.work-cover-media,
+.game-art-media,
+.deferred-embed {
+  width: 100%;
+  height: 100%;
+}
+
+.work-cover-media {
+  position: absolute;
+  inset: 0;
+}
+
+.work-cover-image,
+.game-art-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .work-copy {
@@ -571,6 +593,22 @@ main,
   border: 0;
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.04);
+}
+
+.media-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)),
+    linear-gradient(145deg, rgba(61, 41, 27, 0.7), rgba(33, 23, 16, 0.9));
+  background-size: 220% 100%, 100% 100%;
+  animation: shimmer 2.2s linear infinite;
+}
+
+.embed-placeholder {
+  min-height: inherit;
+  border-radius: 1rem;
 }
 
 .playlist-panel.compact {
@@ -638,6 +676,11 @@ main,
   object-fit: contain;
 }
 
+.game-art-image {
+  max-height: 18rem;
+  object-fit: contain;
+}
+
 .game-copy {
   display: grid;
   align-content: center;
@@ -656,17 +699,57 @@ main,
 
 .service-card {
   display: grid;
-  gap: 0.55rem;
   padding: 1.25rem;
   border-radius: 1.35rem;
 }
 
-.service-card span {
-  color: #efbc84;
-  font-size: 0.76rem;
+.contact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contact-card {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+  padding: 1.35rem;
+  border-radius: 1.45rem;
+}
+
+.contact-card p {
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.contact-card h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+}
+
+.contact-card a {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.82rem 1.22rem;
+  border-radius: 999px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  border: 1px solid var(--border-strong);
+  color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.contact-card a:hover,
+.contact-card a:focus-visible {
+  transform: translateY(-2px);
 }
 
 .site-footer {
@@ -694,6 +777,16 @@ main,
   }
 }
 
+@keyframes shimmer {
+  from {
+    background-position: 200% 0, 0 0;
+  }
+
+  to {
+    background-position: -20% 0, 0 0;
+  }
+}
+
 @media (max-width: 1080px) {
   .site-header {
     flex-wrap: wrap;
@@ -703,6 +796,7 @@ main,
   .playlist-shell,
   .game-card,
   .services-section,
+  .contact-grid,
   .collection-grid,
   .embed-grid,
   .embed-grid.video-grid,
@@ -718,6 +812,7 @@ main,
   .listening-section,
   .games-section,
   .services-section,
+  .contact-section,
   .site-footer {
     padding-top: 3rem;
     padding-bottom: 3rem;

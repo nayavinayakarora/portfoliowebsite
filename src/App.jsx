@@ -276,8 +276,109 @@ const services = [
   'Game Music',
 ]
 
+const contactActions = [
+  {
+    title: 'Email',
+    body: 'For collaborations, commissions, teaching enquiries, and project conversations.',
+    href: 'mailto:hello@vinayakarora.com',
+    cta: 'Send email',
+  },
+  {
+    title: 'Instagram',
+    body: 'Follow current work, releases, and behind-the-scenes updates.',
+    href: 'https://www.instagram.com/vinayak.arora/',
+    cta: 'Open Instagram',
+  },
+  {
+    title: 'LinkedIn',
+    body: 'Connect for professional opportunities, studio work, and long-form profile details.',
+    href: 'https://www.linkedin.com/in/vinayak-arora-26735312b/',
+    cta: 'Open LinkedIn',
+  },
+]
+
 const STORAGE_SOUND = 'vinay-portfolio-sound-enabled'
 const STORAGE_EXPERIENCE = 'vinay-portfolio-experience-mode'
+
+function useDeferredAsset(rootMargin = '240px') {
+  const ref = useRef(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
+
+  useEffect(() => {
+    if (shouldLoad || typeof IntersectionObserver === 'undefined') {
+      setShouldLoad(true)
+      return undefined
+    }
+
+    const element = ref.current
+    if (!element) {
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin },
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [rootMargin, shouldLoad])
+
+  return { ref, shouldLoad }
+}
+
+function DeferredImage({ src, alt, className, imgClassName }) {
+  const { ref, shouldLoad } = useDeferredAsset()
+
+  return (
+    <div ref={ref} className={className}>
+      {shouldLoad ? (
+        <img className={imgClassName} src={src} alt={alt} loading="lazy" decoding="async" />
+      ) : (
+        <div className="media-placeholder" aria-hidden="true" />
+      )}
+    </div>
+  )
+}
+
+function DeferredIframe({
+  title,
+  src,
+  width,
+  height,
+  allow,
+  className,
+  loading = 'lazy',
+  allowFullScreen,
+  referrerPolicy,
+}) {
+  const { ref, shouldLoad } = useDeferredAsset('320px')
+  const frameHeight = typeof height === 'number' ? `${height}px` : height
+
+  return (
+    <div ref={ref} className={className} style={{ minHeight: frameHeight }}>
+      {shouldLoad ? (
+        <iframe
+          title={title}
+          src={src}
+          width={width}
+          height={height}
+          allow={allow}
+          loading={loading}
+          allowFullScreen={allowFullScreen}
+          referrerPolicy={referrerPolicy}
+        />
+      ) : (
+        <div className="media-placeholder embed-placeholder" aria-hidden="true" />
+      )}
+    </div>
+  )
+}
 
 function App() {
   const shellRef = useRef(null)
@@ -448,10 +549,10 @@ function App() {
       </div>
 
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Vinay Arora portfolio home" onClick={handleNavClick} {...attachHover(0)}>
+        <a className="brand" href="#top" aria-label="Vinayak Arora portfolio home" onClick={handleNavClick} {...attachHover(0)}>
           <span className="brand-mark">VA</span>
           <span className="brand-copy">
-            <strong>Vinay Arora</strong>
+            <strong>Vinayak Arora</strong>
             <span>Composer, producer, sound designer</span>
           </span>
         </a>
@@ -477,9 +578,9 @@ function App() {
             <p className="eyebrow">Composer, producer, sound designer</p>
             <h1>Music, sound, teaching, and interactive audio in one cinematic portfolio.</h1>
             <p className="hero-text">
-              Vinay Arora works across music production, sound design, teaching, and game audio. The
-              portfolio brings together original releases, visual-media work, student performances,
-              and interactive audio projects in one place.
+              Vinayak Arora works across music production, sound design, teaching, and game audio.
+              The portfolio brings together original releases, visual-media work, student
+              performances, and interactive audio projects in one place.
             </p>
 
             <div className="hero-actions">
@@ -567,7 +668,8 @@ function App() {
             <div className="collection-grid">
               {activeSectionData.items.map((item, index) => (
                 <article className="work-card" key={item.title} {...attachHover(index + 20)}>
-                  <div className="work-cover" style={{ backgroundImage: `url(${item.image})` }}>
+                  <div className="work-cover">
+                    <DeferredImage src={item.image} alt={item.title} className="work-cover-media" imgClassName="work-cover-image" />
                     <span>{item.role}</span>
                   </div>
                   <div className="work-copy">
@@ -609,13 +711,13 @@ function App() {
             <article className="playlist-panel" {...attachHover(32)}>
               <p className="panel-label">Spotify playlist</p>
               <h3>Listen on Spotify</h3>
-              <iframe
-                title="Vinay Arora Spotify playlist"
+              <DeferredIframe
+                className="deferred-embed"
+                title="Vinayak Arora Spotify playlist"
                 src={listeningRoom.playlist}
                 width="100%"
                 height="352"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
               />
             </article>
 
@@ -669,18 +771,19 @@ function App() {
               <div className={`embed-grid${activeAudioPanel === 'live' ? ' video-grid' : ''}`}>
                 {audioPanels[activeAudioPanel].map((item, index) =>
                   typeof item === 'string' ? (
-                    <iframe
+                    <DeferredIframe
                       key={item}
+                      className="deferred-embed"
                       title={`${activeAudioPanel}-${index}`}
                       src={item}
                       width="100%"
                       height="152"
                       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="lazy"
                     />
                   ) : (
                     <article className="video-card" key={item.href} {...attachHover(index + 40)}>
-                      <iframe
+                      <DeferredIframe
+                        className="deferred-embed"
                         title={item.title}
                         src={item.href}
                         width="100%"
@@ -708,7 +811,7 @@ function App() {
             {games.map((game, index) => (
               <article className="game-card" key={game.title} {...attachHover(index + 48)}>
                 <div className="game-art">
-                  <img src={game.image} alt={game.title} />
+                  <DeferredImage src={game.image} alt={game.title} className="game-art-media" imgClassName="game-art-image" />
                 </div>
                 <div className="game-copy">
                   <p className="panel-label">Gamegrafter&apos;s Collective</p>
@@ -746,15 +849,34 @@ function App() {
           <div className="services-grid">
             {services.map((service, index) => (
               <article className="service-card" key={service} {...attachHover(index + 52)}>
-                <span>Signal</span>
                 <strong>{service}</strong>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="contact-section" id="contact">
+          <div className="section-heading">
+            <p className="eyebrow">Contact me</p>
+            <h2>Reach out for music, sound, teaching, and creative collaborations.</h2>
+          </div>
+
+          <div className="contact-grid">
+            {contactActions.map((item, index) => (
+              <article className="contact-card" key={item.title} {...attachHover(index + 70)}>
+                <p className="panel-label">{item.title}</p>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <a href={item.href} target="_blank" rel="noreferrer" onClick={handleActionClick}>
+                  {item.cta}
+                </a>
               </article>
             ))}
           </div>
         </section>
       </main>
 
-      <footer className="site-footer" id="contact">
+      <footer className="site-footer">
         <div className="footer-copy">
           <p className="eyebrow">Contact & links</p>
           <h2>Connect across music, collaboration, teaching, and studio work.</h2>
