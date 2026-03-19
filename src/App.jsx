@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SiteAudioEngine } from './audioEngine'
+import { HeroScene } from './components/hero/HeroScene'
 
 const signalLinks = [
   { label: 'Instagram', href: 'https://www.instagram.com/vinayak.arora/' },
@@ -523,6 +524,12 @@ function LinkIcon({ type }) {
 function App() {
   const shellRef = useRef(null)
   const engineRef = useRef(null)
+  const heroAudioDataRef = useRef({
+    active: false,
+    level: 0,
+    bass: 0,
+    spectrum: Array.from({ length: 32 }, () => 0),
+  })
   const [activeCollection, setActiveCollection] = useState(featuredCollections[0].id)
   const [activeAudioPanel, setActiveAudioPanel] = useState('vocal')
   const [isEotdOpen, setIsEotdOpen] = useState(false)
@@ -852,8 +859,13 @@ function App() {
 
         <div className="content-column">
       <main>
-        <section className="hero-section" id="top">
-          <div className="hero-copy">
+        <section className="hero-section hero-section-with-bg" id="top">
+          <div className="hero-entity-background" aria-hidden="true">
+            <HeroScene audioDataRef={heroAudioDataRef} audioReactiveEnabled={false} />
+          </div>
+          <div className="hero-entity-scrim" aria-hidden="true" />
+
+          <div className="hero-copy hero-copy--foreground">
             <p className="eyebrow">Composer, producer, sound designer</p>
             <h1>Music, sound, teaching, and interactive audio in one cinematic space.</h1>
             <p className="hero-text">
@@ -870,9 +882,7 @@ function App() {
                 Get in touch
               </a>
             </div>
-
           </div>
-
         </section>
 
         <section className="featured-section" id="featured">
