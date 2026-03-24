@@ -643,6 +643,18 @@ function App() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isMobileMenuOpen])
+
   useEffect(
     () => () => {
       engineRef.current?.dispose()
@@ -813,7 +825,7 @@ function App() {
       </div>
 
       <div className="portfolio-layout">
-        <header className="site-header">
+        <header className={`site-header${isMobileMenuOpen ? ' menu-open' : ''}`}>
           <div className="site-header-bar">
             <button
               type="button"
@@ -840,6 +852,15 @@ function App() {
             >
               <MenuIcon open={isMobileMenuOpen} />
             </button>
+
+            {isMobileMenuOpen ? (
+              <button
+                type="button"
+                className="mobile-nav-scrim"
+                aria-label="Close navigation menu"
+                onClick={handleMobileMenuToggle}
+              />
+            ) : null}
 
             <nav className={`site-nav${isMobileMenuOpen ? ' open' : ''}`} aria-label="Primary">
               {NAV_ITEMS.map(([label, sectionId], index) => (
