@@ -2,6 +2,75 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SiteAudioEngine } from './audioEngine'
 import { HeroScene } from './components/hero/HeroScene'
+import { ChordMoodDecoder } from './components/ChordMoodDecoder'
+import { PitchMemoryGame } from './components/PitchMemoryGame'
+
+const RANDOM_SOUND_LIBRARY = [
+  { label: 'Morning birds', src: '/audio/random-sounds/amb-morning-birds.ogg' },
+  { label: 'A3 forte', src: '/audio/random-sounds/a3-forte.ogg' },
+  { label: 'Action one', src: '/audio/random-sounds/action-1.ogg' },
+  { label: 'Action two', src: '/audio/random-sounds/action-2.ogg' },
+  { label: 'Action three', src: '/audio/random-sounds/action-3.ogg' },
+  { label: 'Parrots', src: '/audio/random-sounds/birds-parrots.ogg' },
+  { label: 'Robin whistle', src: '/audio/random-sounds/birds-robin-whistle.ogg' },
+  { label: 'C3 soft', src: '/audio/random-sounds/c3-soft.ogg' },
+  { label: 'Dholak hit', src: '/audio/random-sounds/dholak-04.ogg' },
+  { label: 'Mridangam phrase', src: '/audio/random-sounds/mridangam-08.ogg' },
+  { label: 'E3 piano soft', src: '/audio/random-sounds/e3-piano-soft.ogg' },
+  { label: 'F3 medium', src: '/audio/random-sounds/f3-medium.ogg' },
+  { label: 'Fire truck horn', src: '/audio/random-sounds/fire-truck-air-horn.ogg' },
+  { label: 'First aid kit', src: '/audio/random-sounds/first-aid-kit-open.ogg' },
+  { label: 'G3 medium', src: '/audio/random-sounds/g3-medium.ogg' },
+  { label: 'Glitchy awesomeness', src: '/audio/random-sounds/glitchy-awesomeness.ogg' },
+  { label: 'Invisibility cloak', src: '/audio/random-sounds/invisibility-cloak.ogg' },
+  { label: 'Loop eight', src: '/audio/random-sounds/loop-08.ogg' },
+  { label: 'Loop eighteen', src: '/audio/random-sounds/loop-18.ogg' },
+  { label: 'Reverse texture five', src: '/audio/random-sounds/reverse-texture-05.ogg' },
+  { label: 'Reverse texture seven', src: '/audio/random-sounds/reverse-texture-07.ogg' },
+  { label: 'Reverse texture nine', src: '/audio/random-sounds/reverse-texture-09.ogg' },
+  { label: 'Reverse texture fifteen', src: '/audio/random-sounds/reverse-texture-15.ogg' },
+  { label: 'Reverse texture seventeen', src: '/audio/random-sounds/reverse-texture-17.ogg' },
+  { label: 'Reverse texture twenty one', src: '/audio/random-sounds/reverse-texture-21.ogg' },
+  { label: 'Reverse texture thirty three', src: '/audio/random-sounds/reverse-texture-33.ogg' },
+  { label: 'Security gate', src: '/audio/random-sounds/security-gate-open.ogg' },
+]
+
+const DEFAULT_RANDOM_SOUND_FX = {
+  delay: 0.18,
+  reverb: 0.36,
+  modulation: 0.3,
+  modulationRate: 0.42,
+}
+
+const RANDOM_SOUND_FALLBACK_VOLUME = 0.22
+
+function createImpulseResponse(context, duration = 1.35, decay = 2.3) {
+  const sampleRate = context.sampleRate
+  const length = Math.max(1, Math.floor(sampleRate * duration))
+  const impulse = context.createBuffer(2, length, sampleRate)
+
+  for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+    const data = impulse.getChannelData(channel)
+    for (let index = 0; index < length; index += 1) {
+      const progress = index / length
+      const envelope = Math.pow(1 - progress, decay)
+      data[index] = ((Math.random() * 2) - 1) * envelope
+    }
+  }
+
+  return impulse
+}
+
+function shuffleIndices(length) {
+  const indices = Array.from({ length }, (_, index) => index)
+
+  for (let index = indices.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[indices[index], indices[swapIndex]] = [indices[swapIndex], indices[index]]
+  }
+
+  return indices
+}
 
 const signalLinks = [
   { label: 'Instagram', href: 'https://www.instagram.com/vinayak.arora/' },
@@ -452,6 +521,45 @@ function MenuIcon({ open }) {
   )
 }
 
+function RandomSoundIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4.5 7.5H7.2L9.8 10.2L12.7 6.8H19.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16.4 5.3L19.5 6.8L16.4 8.3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 16.5H7.2L9.8 13.8L12.7 17.2H19.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16.4 15.7L19.5 17.2L16.4 18.7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function EmailIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -524,6 +632,12 @@ function LinkIcon({ type }) {
 function App() {
   const shellRef = useRef(null)
   const engineRef = useRef(null)
+  const randomSoundPoolRef = useRef([])
+  const randomSoundDeckRef = useRef([])
+  const recentRandomSoundIndicesRef = useRef([])
+  const randomSoundFxContextRef = useRef(null)
+  const randomSoundFxRef = useRef(null)
+  const randomSoundSourceNodesRef = useRef(new Map())
   const heroAudioDataRef = useRef({
     active: false,
     level: 0,
@@ -539,6 +653,7 @@ function App() {
   const [experienceMode, setExperienceMode] = useState(() => localStorage.getItem(STORAGE_EXPERIENCE) === 'true')
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem(STORAGE_THEME) || 'light')
   const [activeSection, setActiveSection] = useState('top')
+  const [randomSoundFxControls, setRandomSoundFxControls] = useState(DEFAULT_RANDOM_SOUND_FX)
 
   const ensureEngine = () => {
     if (!engineRef.current) {
@@ -655,8 +770,71 @@ function App() {
     }
   }, [isMobileMenuOpen])
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+      return
+    }
+
+    const pool = RANDOM_SOUND_LIBRARY.map((clip) => {
+      const audio = new Audio(clip.src)
+      audio.preload = 'metadata'
+      return audio
+    })
+
+    randomSoundPoolRef.current.forEach((audio) => {
+      audio.pause()
+      audio.src = ''
+    })
+    randomSoundPoolRef.current = pool
+    randomSoundDeckRef.current = shuffleIndices(pool.length)
+    recentRandomSoundIndicesRef.current = []
+
+    return () => {
+      pool.forEach((audio) => {
+        audio.pause()
+        audio.src = ''
+      })
+    }
+  }, [])
+
   useEffect(
     () => () => {
+      randomSoundPoolRef.current.forEach((audio) => {
+        audio.pause()
+        audio.src = ''
+      })
+      randomSoundPoolRef.current = []
+      randomSoundDeckRef.current = []
+      recentRandomSoundIndicesRef.current = []
+      randomSoundSourceNodesRef.current.forEach((sourceNode) => {
+        try {
+          sourceNode.disconnect()
+        } catch {}
+      })
+      randomSoundSourceNodesRef.current.clear()
+      if (randomSoundFxRef.current?.lfo) {
+        try {
+          randomSoundFxRef.current.lfo.stop()
+        } catch {}
+      }
+      if (randomSoundFxRef.current?.chorusLfo) {
+        try {
+          randomSoundFxRef.current.chorusLfo.stop()
+        } catch {}
+      }
+      if (randomSoundFxRef.current?.ringOscillator) {
+        try {
+          randomSoundFxRef.current.ringOscillator.stop()
+        } catch {}
+      }
+      if (randomSoundFxRef.current?.lfoGain) {
+        try {
+          randomSoundFxRef.current.lfoGain.disconnect()
+        } catch {}
+      }
+      randomSoundFxRef.current = null
+      randomSoundFxContextRef.current?.close().catch(() => {})
+      randomSoundFxContextRef.current = null
       engineRef.current?.dispose()
     },
     [],
@@ -750,6 +928,277 @@ function App() {
     setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'))
   }
 
+  const applyRandomSoundFxControls = (
+    controls,
+    context = randomSoundFxContextRef.current,
+    fxNodes = randomSoundFxRef.current,
+  ) => {
+    if (!context || !fxNodes) {
+      return
+    }
+
+    const safeDelay = Math.max(0.04, Math.min(0.42, controls.delay))
+    const safeReverb = Math.max(0, Math.min(1, controls.reverb))
+    const safeModulation = Math.max(0, Math.min(1, controls.modulation))
+    const safeModulationRate = Math.max(0, Math.min(1, controls.modulationRate ?? DEFAULT_RANDOM_SOUND_FX.modulationRate))
+    const modulationMix = safeModulation
+    const chorusRateHz = 0.18 + safeModulationRate * 7.2
+    const ringRateHz = 18 + safeModulationRate * 300
+    const chorusDepthSeconds = 0.001 + safeModulation * 0.018
+
+    fxNodes.delay.delayTime.setTargetAtTime(safeDelay, context.currentTime, 0.03)
+    fxNodes.feedback.gain.setTargetAtTime(0.1 + safeDelay * 0.74, context.currentTime, 0.03)
+    fxNodes.wetGain.gain.setTargetAtTime(0.04 + safeDelay * 0.42, context.currentTime, 0.03)
+    fxNodes.reverbSend.gain.setTargetAtTime(0.08 + safeReverb * 1.42, context.currentTime, 0.03)
+    fxNodes.reverbGain.gain.setTargetAtTime(safeReverb * 1.16, context.currentTime, 0.03)
+    fxNodes.chorusDelay.delayTime.setTargetAtTime(0.012 + safeModulation * 0.018, context.currentTime, 0.03)
+    fxNodes.chorusLfoGain.gain.setTargetAtTime(chorusDepthSeconds, context.currentTime, 0.04)
+    fxNodes.chorusMix.gain.setTargetAtTime(0.02 + safeModulation * 0.46, context.currentTime, 0.05)
+    fxNodes.ringGain.gain.setTargetAtTime(0.16 + safeModulation * 0.26, context.currentTime, 0.05)
+    fxNodes.ringDepth.gain.setTargetAtTime(safeModulation * 0.95, context.currentTime, 0.04)
+    fxNodes.ringMix.gain.setTargetAtTime(0.01 + safeModulation * 0.23, context.currentTime, 0.05)
+    fxNodes.lfoGain.gain.setTargetAtTime(safeModulation * 0.06, context.currentTime, 0.03)
+    fxNodes.lfo.frequency.setTargetAtTime(chorusRateHz, context.currentTime, 0.05)
+    fxNodes.filterLfoGain.gain.setTargetAtTime(90 + modulationMix * 2800, context.currentTime, 0.05)
+    fxNodes.chorusLfo.frequency.setTargetAtTime(chorusRateHz, context.currentTime, 0.05)
+    fxNodes.ringOscillator.frequency.setTargetAtTime(ringRateHz, context.currentTime, 0.05)
+    fxNodes.toneFilter.frequency.setTargetAtTime(
+      1800 + (safeReverb * 3200),
+      context.currentTime,
+      0.05,
+    )
+  }
+
+  const ensureRandomSoundFx = async () => {
+    if (typeof window === 'undefined') {
+      return null
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextClass) {
+      return null
+    }
+
+    if (!randomSoundFxContextRef.current) {
+      randomSoundFxContextRef.current = new AudioContextClass()
+    }
+
+    const context = randomSoundFxContextRef.current
+    if (context.state === 'suspended') {
+      await context.resume()
+    }
+
+    if (!randomSoundFxRef.current) {
+      const masterGain = context.createGain()
+      const limiter = context.createDynamicsCompressor()
+      const limiterOutput = context.createGain()
+      const dryGain = context.createGain()
+      const fxInputGain = context.createGain()
+      const delay = context.createDelay(0.6)
+      const feedback = context.createGain()
+      const wetGain = context.createGain()
+      const convolver = context.createConvolver()
+      const reverbSend = context.createGain()
+      const reverbGain = context.createGain()
+      const chorusDelay = context.createDelay(0.12)
+      const chorusMix = context.createGain()
+      const chorusLfo = context.createOscillator()
+      const chorusLfoGain = context.createGain()
+      const ringGain = context.createGain()
+      const ringMix = context.createGain()
+      const ringOscillator = context.createOscillator()
+      const ringDepth = context.createGain()
+      const toneFilter = context.createBiquadFilter()
+      const lfo = context.createOscillator()
+      const lfoGain = context.createGain()
+      const filterLfoGain = context.createGain()
+
+      masterGain.gain.value = 0.26
+      limiter.threshold.value = -20
+      limiter.knee.value = 8
+      limiter.ratio.value = 14
+      limiter.attack.value = 0.003
+      limiter.release.value = 0.18
+      limiterOutput.gain.value = 0.86
+      dryGain.gain.value = 0.62
+      fxInputGain.gain.value = 0.34
+      delay.delayTime.value = DEFAULT_RANDOM_SOUND_FX.delay
+      feedback.gain.value = 0.1 + (DEFAULT_RANDOM_SOUND_FX.delay * 0.74)
+      wetGain.gain.value = 0.04 + (DEFAULT_RANDOM_SOUND_FX.delay * 0.42)
+      reverbSend.gain.value = 0.08 + (DEFAULT_RANDOM_SOUND_FX.reverb * 1.42)
+      reverbGain.gain.value = DEFAULT_RANDOM_SOUND_FX.reverb * 1.16
+      chorusDelay.delayTime.value = 0.012 + (DEFAULT_RANDOM_SOUND_FX.modulation * 0.018)
+      chorusMix.gain.value = 0.02 + (DEFAULT_RANDOM_SOUND_FX.modulation * 0.46)
+      chorusLfo.type = 'sine'
+      chorusLfo.frequency.value = 0.18 + (DEFAULT_RANDOM_SOUND_FX.modulationRate * 7.2)
+      chorusLfoGain.gain.value = 0.001 + (DEFAULT_RANDOM_SOUND_FX.modulation * 0.018)
+      ringGain.gain.value = 0.16 + (DEFAULT_RANDOM_SOUND_FX.modulation * 0.26)
+      ringMix.gain.value = 0.01 + (DEFAULT_RANDOM_SOUND_FX.modulation * 0.23)
+      ringOscillator.type = 'sine'
+      ringOscillator.frequency.value = 18 + (DEFAULT_RANDOM_SOUND_FX.modulationRate * 300)
+      ringDepth.gain.value = DEFAULT_RANDOM_SOUND_FX.modulation * 0.95
+      toneFilter.type = 'lowpass'
+      toneFilter.frequency.value = 1800 + (DEFAULT_RANDOM_SOUND_FX.reverb * 3200)
+      toneFilter.Q.value = 0.4
+      convolver.buffer = createImpulseResponse(context)
+
+      lfo.type = 'sine'
+      lfo.frequency.value = 0.18 + (DEFAULT_RANDOM_SOUND_FX.modulationRate * 7.2)
+      lfoGain.gain.value = DEFAULT_RANDOM_SOUND_FX.modulation * 0.06
+      filterLfoGain.gain.value = 90 + (DEFAULT_RANDOM_SOUND_FX.modulation * 2800)
+
+      dryGain.connect(masterGain)
+      fxInputGain.connect(toneFilter)
+      toneFilter.connect(delay)
+      toneFilter.connect(reverbSend)
+      toneFilter.connect(chorusDelay)
+      toneFilter.connect(ringGain)
+      reverbSend.connect(convolver)
+      chorusDelay.connect(chorusMix)
+      ringGain.connect(ringMix)
+      delay.connect(feedback)
+      feedback.connect(delay)
+      delay.connect(wetGain)
+      delay.connect(convolver)
+      convolver.connect(reverbGain)
+      wetGain.connect(masterGain)
+      reverbGain.connect(masterGain)
+      chorusMix.connect(masterGain)
+      ringMix.connect(masterGain)
+      masterGain.connect(limiter)
+      limiter.connect(limiterOutput)
+      limiterOutput.connect(context.destination)
+      lfo.connect(lfoGain)
+      lfoGain.connect(delay.delayTime)
+      lfo.connect(filterLfoGain)
+      filterLfoGain.connect(toneFilter.frequency)
+      chorusLfo.connect(chorusLfoGain)
+      chorusLfoGain.connect(chorusDelay.delayTime)
+      ringOscillator.connect(ringDepth)
+      ringDepth.connect(ringGain.gain)
+      lfo.start()
+      chorusLfo.start()
+      ringOscillator.start()
+
+      randomSoundFxRef.current = {
+        masterGain,
+        limiter,
+        limiterOutput,
+        dryGain,
+        fxInputGain,
+        delay,
+        feedback,
+        wetGain,
+        convolver,
+        reverbSend,
+        reverbGain,
+        chorusDelay,
+        chorusMix,
+        chorusLfo,
+        chorusLfoGain,
+        ringGain,
+        ringMix,
+        ringOscillator,
+        ringDepth,
+        toneFilter,
+        lfo,
+        lfoGain,
+        filterLfoGain,
+      }
+
+      applyRandomSoundFxControls(randomSoundFxControls, context, randomSoundFxRef.current)
+    }
+
+    if (randomSoundSourceNodesRef.current.size === 0 && randomSoundFxRef.current) {
+      randomSoundPoolRef.current.forEach((audio) => {
+        audio.volume = 1
+        const sourceNode = context.createMediaElementSource(audio)
+        sourceNode.connect(randomSoundFxRef.current.dryGain)
+        sourceNode.connect(randomSoundFxRef.current.fxInputGain)
+        randomSoundSourceNodesRef.current.set(audio, sourceNode)
+      })
+    }
+
+    return randomSoundFxRef.current
+  }
+
+  const handleRandomSoundFxControlChange = (key, value) => {
+    const nextControls = {
+      ...randomSoundFxControls,
+      [key]: value,
+    }
+
+    setRandomSoundFxControls(nextControls)
+    applyRandomSoundFxControls(nextControls)
+  }
+
+  const handleRandomSoundFxReset = () => {
+    ensureEngine()?.playClick()
+    setRandomSoundFxControls(DEFAULT_RANDOM_SOUND_FX)
+    applyRandomSoundFxControls(DEFAULT_RANDOM_SOUND_FX)
+  }
+
+  const handleRandomSoundPlay = async () => {
+    const pool = randomSoundPoolRef.current
+
+    if (!pool.length) {
+      return
+    }
+
+    let hasFxChain = false
+
+    try {
+      hasFxChain = Boolean(await ensureRandomSoundFx())
+    } catch (error) {
+      console.error('Random sound FX init failed:', error)
+    }
+
+    const recentLimit = Math.max(3, Math.min(6, pool.length - 1))
+
+    if (!randomSoundDeckRef.current.length) {
+      randomSoundDeckRef.current = shuffleIndices(pool.length)
+    }
+
+    let nextIndex = randomSoundDeckRef.current.pop()
+    let safety = pool.length * 3
+
+    while (
+      pool.length > 1 &&
+      typeof nextIndex === 'number' &&
+      recentRandomSoundIndicesRef.current.includes(nextIndex) &&
+      safety > 0
+    ) {
+      if (!randomSoundDeckRef.current.length) {
+        randomSoundDeckRef.current = shuffleIndices(pool.length)
+      }
+      randomSoundDeckRef.current.unshift(nextIndex)
+      nextIndex = randomSoundDeckRef.current.pop()
+      safety -= 1
+    }
+
+    if (typeof nextIndex !== 'number') {
+      nextIndex = 0
+    }
+
+    pool.forEach((audio, index) => {
+      if (index !== nextIndex) {
+        audio.pause()
+        audio.currentTime = 0
+      }
+    })
+
+    const nextAudio = pool[nextIndex]
+    nextAudio.volume = hasFxChain ? 1 : RANDOM_SOUND_FALLBACK_VOLUME
+    nextAudio.currentTime = 0
+    nextAudio.play().catch((error) => {
+      console.error('Random sound playback failed:', error)
+    })
+    recentRandomSoundIndicesRef.current = [
+      ...recentRandomSoundIndicesRef.current.filter((index) => index !== nextIndex),
+      nextIndex,
+    ].slice(-recentLimit)
+  }
+
   const handleMobileMenuToggle = () => {
     ensureEngine()?.playClick()
     setIsMobileMenuOpen((current) => !current)
@@ -786,8 +1235,86 @@ function App() {
     ensureEngine()?.playClick()
   }
 
+  useEffect(() => {
+    applyRandomSoundFxControls(randomSoundFxControls)
+  }, [randomSoundFxControls])
+
   return (
     <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
+      <div className="random-fx-unit" aria-label="Random sound effects unit">
+        <div className="random-fx-unit-head">
+          <div>
+            <p className="panel-label">FX unit</p>
+            <strong>Shape the random sound</strong>
+          </div>
+          <button type="button" className="random-fx-reset" onClick={handleRandomSoundFxReset}>
+            Reset
+          </button>
+        </div>
+
+        <div className="random-fx-grid">
+          <label className="random-fx-control">
+            <span className="random-fx-label-row">
+              <span>Delay</span>
+              <strong>{Math.round((randomSoundFxControls.delay / 0.42) * 100)}%</strong>
+            </span>
+            <input
+              type="range"
+              min="0.04"
+              max="0.42"
+              step="0.01"
+              value={randomSoundFxControls.delay}
+              onChange={(event) => handleRandomSoundFxControlChange('delay', Number(event.target.value))}
+            />
+          </label>
+
+          <label className="random-fx-control">
+            <span className="random-fx-label-row">
+              <span>Reverb</span>
+              <strong>{Math.round(randomSoundFxControls.reverb * 100)}%</strong>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={randomSoundFxControls.reverb}
+              onChange={(event) => handleRandomSoundFxControlChange('reverb', Number(event.target.value))}
+            />
+          </label>
+
+          <label className="random-fx-control">
+            <span className="random-fx-label-row">
+              <span>Modulation</span>
+              <strong>{Math.round(randomSoundFxControls.modulation * 100)}%</strong>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.001"
+              value={randomSoundFxControls.modulation}
+              onChange={(event) => handleRandomSoundFxControlChange('modulation', Number(event.target.value))}
+            />
+          </label>
+
+          <label className="random-fx-control">
+            <span className="random-fx-label-row">
+              <span>Mod rate</span>
+              <strong>{Math.round((0.18 + randomSoundFxControls.modulationRate * 7.2) * 10) / 10} Hz</strong>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.001"
+              value={randomSoundFxControls.modulationRate}
+              onChange={(event) => handleRandomSoundFxControlChange('modulationRate', Number(event.target.value))}
+            />
+          </label>
+        </div>
+      </div>
+
       <div className="audio-dock">
         <button
           type="button"
@@ -841,6 +1368,17 @@ function App() {
                 <strong>Vinayak Arora</strong>
                 <span>Composer, producer, sound designer</span>
               </span>
+            </button>
+
+            <button
+              type="button"
+              className="header-sound-button"
+              onClick={handleRandomSoundPlay}
+              aria-label="Play a new random sound"
+              title="Play a new sound"
+            >
+              <RandomSoundIcon />
+              <span>Play a new sound</span>
             </button>
 
             <button
@@ -1180,7 +1718,12 @@ function App() {
         <section className="games-section" id="games">
           <div className="section-heading">
             <p className="eyebrow">Games</p>
-            <h2>Download and explore released interactive work.</h2>
+            <h2>Play a small audio challenge and explore released interactive work.</h2>
+          </div>
+
+          <div className="games-mini-grid">
+            <PitchMemoryGame />
+            <ChordMoodDecoder />
           </div>
 
           <div className="games-grid">

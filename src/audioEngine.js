@@ -33,6 +33,8 @@ export class SiteAudioEngine {
     this.ambientSource = null
     this.ambientDryGain = null
     this.ambientWetGain = null
+    this.ambientLimiter = null
+    this.ambientLimiterOutput = null
     this.ambientDelay = null
     this.ambientFeedback = null
     this.ambientLfo = null
@@ -41,6 +43,8 @@ export class SiteAudioEngine {
     this.windSource = null
     this.windGain = null
     this.windFilter = null
+    this.windLimiter = null
+    this.windLimiterOutput = null
     this.scrollProgress = 0
     this.scrollActive = false
     this.scrollIdleTimeout = null
@@ -267,11 +271,19 @@ export class SiteAudioEngine {
       this.ambientSource = this.ambientContext.createMediaElementSource(this.ambient)
       this.ambientDryGain = this.ambientContext.createGain()
       this.ambientWetGain = this.ambientContext.createGain()
+      this.ambientLimiter = this.ambientContext.createDynamicsCompressor()
+      this.ambientLimiterOutput = this.ambientContext.createGain()
       this.ambientDelay = this.ambientContext.createDelay(1)
       this.ambientFeedback = this.ambientContext.createGain()
       this.ambientLfo = this.ambientContext.createOscillator()
       const lfoDepth = this.ambientContext.createGain()
 
+      this.ambientLimiter.threshold.value = -22
+      this.ambientLimiter.knee.value = 8
+      this.ambientLimiter.ratio.value = 12
+      this.ambientLimiter.attack.value = 0.004
+      this.ambientLimiter.release.value = 0.2
+      this.ambientLimiterOutput.gain.value = 0.9
       this.ambientDryGain.gain.value = 0.82
       this.ambientWetGain.gain.value = 0.16
       this.ambientDelay.delayTime.value = 0.22
@@ -281,13 +293,15 @@ export class SiteAudioEngine {
       lfoDepth.gain.value = 0.018
 
       this.ambientSource.connect(this.ambientDryGain)
-      this.ambientDryGain.connect(this.ambientContext.destination)
+      this.ambientDryGain.connect(this.ambientLimiter)
 
       this.ambientSource.connect(this.ambientDelay)
       this.ambientDelay.connect(this.ambientFeedback)
       this.ambientFeedback.connect(this.ambientDelay)
       this.ambientDelay.connect(this.ambientWetGain)
-      this.ambientWetGain.connect(this.ambientContext.destination)
+      this.ambientWetGain.connect(this.ambientLimiter)
+      this.ambientLimiter.connect(this.ambientLimiterOutput)
+      this.ambientLimiterOutput.connect(this.ambientContext.destination)
 
       this.ambientLfo.connect(lfoDepth)
       lfoDepth.connect(this.ambientDelay.delayTime)
@@ -308,14 +322,24 @@ export class SiteAudioEngine {
       this.windSource = this.windContext.createMediaElementSource(this.wind)
       this.windFilter = this.windContext.createBiquadFilter()
       this.windGain = this.windContext.createGain()
+      this.windLimiter = this.windContext.createDynamicsCompressor()
+      this.windLimiterOutput = this.windContext.createGain()
 
       this.windFilter.type = 'lowpass'
       this.windFilter.frequency.value = 700
       this.windGain.gain.value = 0.028
+      this.windLimiter.threshold.value = -20
+      this.windLimiter.knee.value = 7
+      this.windLimiter.ratio.value = 10
+      this.windLimiter.attack.value = 0.003
+      this.windLimiter.release.value = 0.16
+      this.windLimiterOutput.gain.value = 0.92
 
       this.windSource.connect(this.windFilter)
       this.windFilter.connect(this.windGain)
-      this.windGain.connect(this.windContext.destination)
+      this.windGain.connect(this.windLimiter)
+      this.windLimiter.connect(this.windLimiterOutput)
+      this.windLimiterOutput.connect(this.windContext.destination)
     } catch (error) {
       console.error('Wind FX init failed:', error)
     }
