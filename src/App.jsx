@@ -5,35 +5,7 @@ import { HeroScene } from './components/hero/HeroScene'
 import { ChordMoodDecoder } from './components/ChordMoodDecoder'
 import { PitchMemoryGame } from './components/PitchMemoryGame'
 
-const RANDOM_SOUND_LIBRARY = [
-  { label: 'Morning birds', src: '/audio/random-sounds/amb-morning-birds.ogg' },
-  { label: 'A3 forte', src: '/audio/random-sounds/a3-forte.ogg' },
-  { label: 'Action one', src: '/audio/random-sounds/action-1.ogg' },
-  { label: 'Action two', src: '/audio/random-sounds/action-2.ogg' },
-  { label: 'Action three', src: '/audio/random-sounds/action-3.ogg' },
-  { label: 'Parrots', src: '/audio/random-sounds/birds-parrots.ogg' },
-  { label: 'Robin whistle', src: '/audio/random-sounds/birds-robin-whistle.ogg' },
-  { label: 'C3 soft', src: '/audio/random-sounds/c3-soft.ogg' },
-  { label: 'Dholak hit', src: '/audio/random-sounds/dholak-04.ogg' },
-  { label: 'Mridangam phrase', src: '/audio/random-sounds/mridangam-08.ogg' },
-  { label: 'E3 piano soft', src: '/audio/random-sounds/e3-piano-soft.ogg' },
-  { label: 'F3 medium', src: '/audio/random-sounds/f3-medium.ogg' },
-  { label: 'Fire truck horn', src: '/audio/random-sounds/fire-truck-air-horn.ogg' },
-  { label: 'First aid kit', src: '/audio/random-sounds/first-aid-kit-open.ogg' },
-  { label: 'G3 medium', src: '/audio/random-sounds/g3-medium.ogg' },
-  { label: 'Glitchy awesomeness', src: '/audio/random-sounds/glitchy-awesomeness.ogg' },
-  { label: 'Invisibility cloak', src: '/audio/random-sounds/invisibility-cloak.ogg' },
-  { label: 'Loop eight', src: '/audio/random-sounds/loop-08.ogg' },
-  { label: 'Loop eighteen', src: '/audio/random-sounds/loop-18.ogg' },
-  { label: 'Reverse texture five', src: '/audio/random-sounds/reverse-texture-05.ogg' },
-  { label: 'Reverse texture seven', src: '/audio/random-sounds/reverse-texture-07.ogg' },
-  { label: 'Reverse texture nine', src: '/audio/random-sounds/reverse-texture-09.ogg' },
-  { label: 'Reverse texture fifteen', src: '/audio/random-sounds/reverse-texture-15.ogg' },
-  { label: 'Reverse texture seventeen', src: '/audio/random-sounds/reverse-texture-17.ogg' },
-  { label: 'Reverse texture twenty one', src: '/audio/random-sounds/reverse-texture-21.ogg' },
-  { label: 'Reverse texture thirty three', src: '/audio/random-sounds/reverse-texture-33.ogg' },
-  { label: 'Security gate', src: '/audio/random-sounds/security-gate-open.ogg' },
-]
+const RANDOM_SOUND_MANIFEST_PATH = '/audio/random-sounds/manifest.json'
 
 const DEFAULT_RANDOM_SOUND_FX = {
   delay: 0.18,
@@ -632,9 +604,11 @@ function LinkIcon({ type }) {
 function App() {
   const shellRef = useRef(null)
   const engineRef = useRef(null)
-  const randomSoundPoolRef = useRef([])
   const randomSoundDeckRef = useRef([])
   const recentRandomSoundIndicesRef = useRef([])
+  const randomSoundAudioCacheRef = useRef(new Map())
+  const randomSoundCacheOrderRef = useRef([])
+  const activeRandomSoundRef = useRef(null)
   const randomSoundFxContextRef = useRef(null)
   const randomSoundFxRef = useRef(null)
   const randomSoundSourceNodesRef = useRef(new Map())
@@ -653,6 +627,7 @@ function App() {
   const [experienceMode, setExperienceMode] = useState(() => localStorage.getItem(STORAGE_EXPERIENCE) === 'true')
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem(STORAGE_THEME) || 'light')
   const [activeSection, setActiveSection] = useState('top')
+  const [randomSoundLibrary, setRandomSoundLibrary] = useState([])
   const [randomSoundFxControls, setRandomSoundFxControls] = useState(DEFAULT_RANDOM_SOUND_FX)
   const [isMobileFxLayout, setIsMobileFxLayout] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 760 : false,
@@ -795,39 +770,111 @@ function App() {
   }, [isMobileMenuOpen])
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof Audio === 'undefined') {
-      return
+    if (typeof window === 'undefined') {
+      return undefined
     }
 
-    const pool = RANDOM_SOUND_LIBRARY.map((clip) => {
-      const audio = new Audio(clip.src)
-      audio.preload = 'metadata'
-      return audio
-    })
+    let cancelled = false
 
-    randomSoundPoolRef.current.forEach((audio) => {
-      audio.pause()
-      audio.src = ''
-    })
-    randomSoundPoolRef.current = pool
-    randomSoundDeckRef.current = shuffleIndices(pool.length)
-    recentRandomSoundIndicesRef.current = []
+    const loadRandomSoundManifest = async () => {
+      try {
+        const response = await fetch(RANDOM_SOUND_MANIFEST_PATH, { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error(`Manifest request failed with ${response.status}`)
+        }
+
+        const manifest = await response.json()
+        if (!Array.isArray(manifest) || cancelled) {
+          return
+        }
+
+        const sanitized = manifest
+          .map((entry) => {
+            if (typeof entry === 'string') {
+              return { label: entry, src: entry }
+            }
+            if (entry && typeof entry.src === 'string') {
+              return {
+                label: typeof entry.label === 'string' && entry.label.trim() ? entry.label : entry.src,
+                src: entry.src,
+              }
+            }
+            return null
+          })
+          .filter(Boolean)
+
+        setRandomSoundLibrary(sanitized)
+      } catch (error) {
+        console.error('Failed to load random sound manifest:', error)
+        setRandomSoundLibrary([])
+      }
+    }
+
+    loadRandomSoundManifest()
 
     return () => {
-      pool.forEach((audio) => {
-        audio.pause()
-        audio.src = ''
-      })
+      cancelled = true
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    randomSoundDeckRef.current = shuffleIndices(randomSoundLibrary.length)
+    recentRandomSoundIndicesRef.current = []
+    activeRandomSoundRef.current?.pause()
+    if (activeRandomSoundRef.current) {
+      activeRandomSoundRef.current.currentTime = 0
+    }
+    activeRandomSoundRef.current = null
+
+    if (!randomSoundLibrary.length || typeof Audio === 'undefined') {
+      return undefined
+    }
+
+    const idleSchedule =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback
+        : (callback) => window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 240)
+    const idleCancel =
+      typeof window.cancelIdleCallback === 'function'
+        ? window.cancelIdleCallback
+        : (handle) => window.clearTimeout(handle)
+
+    const warmCount = Math.min(8, randomSoundLibrary.length)
+    const warmIndices = shuffleIndices(randomSoundLibrary.length).slice(0, warmCount)
+    const warmHandle = idleSchedule(() => {
+      warmIndices.forEach((index) => {
+        const clip = randomSoundLibrary[index]
+        if (!clip) {
+          return
+        }
+        const existing = randomSoundAudioCacheRef.current.get(clip.src)
+        const audio = existing ?? new Audio(clip.src)
+        audio.preload = 'metadata'
+        if (!existing) {
+          randomSoundAudioCacheRef.current.set(clip.src, audio)
+          randomSoundCacheOrderRef.current.push(clip.src)
+        }
+      })
+    })
+
+    return () => {
+      idleCancel(warmHandle)
+    }
+  }, [randomSoundLibrary])
+
   useEffect(
     () => () => {
-      randomSoundPoolRef.current.forEach((audio) => {
+      randomSoundAudioCacheRef.current.forEach((audio) => {
         audio.pause()
         audio.src = ''
       })
-      randomSoundPoolRef.current = []
+      randomSoundAudioCacheRef.current.clear()
+      randomSoundCacheOrderRef.current = []
+      activeRandomSoundRef.current = null
       randomSoundDeckRef.current = []
       recentRandomSoundIndicesRef.current = []
       randomSoundSourceNodesRef.current.forEach((sourceNode) => {
@@ -950,6 +997,47 @@ function App() {
   const handleThemeToggle = () => {
     ensureEngine()
     setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'))
+  }
+
+  const getOrCreateRandomAudio = (src) => {
+    const existing = randomSoundAudioCacheRef.current.get(src)
+    if (existing) {
+      return existing
+    }
+
+    if (typeof Audio === 'undefined') {
+      return null
+    }
+
+    const audio = new Audio(src)
+    audio.preload = 'metadata'
+    randomSoundAudioCacheRef.current.set(src, audio)
+    randomSoundCacheOrderRef.current.push(src)
+
+    const maxCacheSize = 40
+    while (randomSoundCacheOrderRef.current.length > maxCacheSize) {
+      const oldestSrc = randomSoundCacheOrderRef.current.shift()
+      if (!oldestSrc || oldestSrc === src) {
+        continue
+      }
+      const oldestAudio = randomSoundAudioCacheRef.current.get(oldestSrc)
+      if (!oldestAudio || oldestAudio === activeRandomSoundRef.current) {
+        randomSoundCacheOrderRef.current.push(oldestSrc)
+        break
+      }
+      const oldestSource = randomSoundSourceNodesRef.current.get(oldestAudio)
+      if (oldestSource) {
+        try {
+          oldestSource.disconnect()
+        } catch {}
+        randomSoundSourceNodesRef.current.delete(oldestAudio)
+      }
+      oldestAudio.pause()
+      oldestAudio.src = ''
+      randomSoundAudioCacheRef.current.delete(oldestSrc)
+    }
+
+    return audio
   }
 
   const applyRandomSoundFxControls = (
@@ -1133,16 +1221,6 @@ function App() {
       applyRandomSoundFxControls(randomSoundFxControls, context, randomSoundFxRef.current)
     }
 
-    if (randomSoundSourceNodesRef.current.size === 0 && randomSoundFxRef.current) {
-      randomSoundPoolRef.current.forEach((audio) => {
-        audio.volume = 1
-        const sourceNode = context.createMediaElementSource(audio)
-        sourceNode.connect(randomSoundFxRef.current.dryGain)
-        sourceNode.connect(randomSoundFxRef.current.fxInputGain)
-        randomSoundSourceNodesRef.current.set(audio, sourceNode)
-      })
-    }
-
     return randomSoundFxRef.current
   }
 
@@ -1168,37 +1246,38 @@ function App() {
   }
 
   const handleRandomSoundPlay = async () => {
-    const pool = randomSoundPoolRef.current
-
-    if (!pool.length) {
+    const poolSize = randomSoundLibrary.length
+    if (!poolSize) {
       return
     }
 
     let hasFxChain = false
+    let fxNodes = null
 
     try {
-      hasFxChain = Boolean(await ensureRandomSoundFx())
+      fxNodes = await ensureRandomSoundFx()
+      hasFxChain = Boolean(fxNodes)
     } catch (error) {
       console.error('Random sound FX init failed:', error)
     }
 
-    const recentLimit = Math.max(3, Math.min(6, pool.length - 1))
+    const recentLimit = Math.max(3, Math.min(9, poolSize - 1))
 
     if (!randomSoundDeckRef.current.length) {
-      randomSoundDeckRef.current = shuffleIndices(pool.length)
+      randomSoundDeckRef.current = shuffleIndices(poolSize)
     }
 
     let nextIndex = randomSoundDeckRef.current.pop()
-    let safety = pool.length * 3
+    let safety = poolSize * 3
 
     while (
-      pool.length > 1 &&
+      poolSize > 1 &&
       typeof nextIndex === 'number' &&
       recentRandomSoundIndicesRef.current.includes(nextIndex) &&
       safety > 0
     ) {
       if (!randomSoundDeckRef.current.length) {
-        randomSoundDeckRef.current = shuffleIndices(pool.length)
+        randomSoundDeckRef.current = shuffleIndices(poolSize)
       }
       randomSoundDeckRef.current.unshift(nextIndex)
       nextIndex = randomSoundDeckRef.current.pop()
@@ -1209,19 +1288,36 @@ function App() {
       nextIndex = 0
     }
 
-    pool.forEach((audio, index) => {
-      if (index !== nextIndex) {
-        audio.pause()
-        audio.currentTime = 0
-      }
-    })
+    const nextClip = randomSoundLibrary[nextIndex]
+    if (!nextClip?.src) {
+      return
+    }
 
-    const nextAudio = pool[nextIndex]
+    const nextAudio = getOrCreateRandomAudio(nextClip.src)
+    if (!nextAudio) {
+      return
+    }
+
+    if (activeRandomSoundRef.current && activeRandomSoundRef.current !== nextAudio) {
+      activeRandomSoundRef.current.pause()
+      activeRandomSoundRef.current.currentTime = 0
+    }
+
     nextAudio.volume = hasFxChain ? 1 : RANDOM_SOUND_FALLBACK_VOLUME
     nextAudio.currentTime = 0
+
+    if (hasFxChain && fxNodes && !randomSoundSourceNodesRef.current.has(nextAudio)) {
+      const sourceNode = randomSoundFxContextRef.current.createMediaElementSource(nextAudio)
+      sourceNode.connect(fxNodes.dryGain)
+      sourceNode.connect(fxNodes.fxInputGain)
+      randomSoundSourceNodesRef.current.set(nextAudio, sourceNode)
+    }
+
     nextAudio.play().catch((error) => {
       console.error('Random sound playback failed:', error)
     })
+    activeRandomSoundRef.current = nextAudio
+
     recentRandomSoundIndicesRef.current = [
       ...recentRandomSoundIndicesRef.current.filter((index) => index !== nextIndex),
       nextIndex,
