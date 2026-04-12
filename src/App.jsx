@@ -654,6 +654,12 @@ function App() {
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem(STORAGE_THEME) || 'light')
   const [activeSection, setActiveSection] = useState('top')
   const [randomSoundFxControls, setRandomSoundFxControls] = useState(DEFAULT_RANDOM_SOUND_FX)
+  const [isMobileFxLayout, setIsMobileFxLayout] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 760 : false,
+  )
+  const [isFxUnitOpen, setIsFxUnitOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth > 760 : true,
+  )
 
   const ensureEngine = () => {
     if (!engineRef.current) {
@@ -688,6 +694,24 @@ function App() {
 
     window.addEventListener('pointermove', handlePointerMove)
     return () => window.removeEventListener('pointermove', handlePointerMove)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const handleResize = () => {
+      const mobileViewport = window.innerWidth <= 760
+      setIsMobileFxLayout(mobileViewport)
+      if (!mobileViewport) {
+        setIsFxUnitOpen(true)
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   useEffect(() => {
@@ -1138,6 +1162,11 @@ function App() {
     applyRandomSoundFxControls(DEFAULT_RANDOM_SOUND_FX)
   }
 
+  const handleFxUnitToggle = () => {
+    ensureEngine()?.playClick()
+    setIsFxUnitOpen((current) => !current)
+  }
+
   const handleRandomSoundPlay = async () => {
     const pool = randomSoundPoolRef.current
 
@@ -1239,17 +1268,29 @@ function App() {
     applyRandomSoundFxControls(randomSoundFxControls)
   }, [randomSoundFxControls])
 
+  const isFxUnitCollapsed = isMobileFxLayout && !isFxUnitOpen
+
   return (
     <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
-      <div className="random-fx-unit" aria-label="Random sound effects unit">
+      <div className={`random-fx-unit${isFxUnitCollapsed ? ' collapsed' : ''}`} aria-label="Random sound effects unit">
         <div className="random-fx-unit-head">
           <div>
             <p className="panel-label">FX unit</p>
             <strong>Shape the random sound</strong>
           </div>
-          <button type="button" className="random-fx-reset" onClick={handleRandomSoundFxReset}>
-            Reset
-          </button>
+          <div className="random-fx-head-actions">
+            <button
+              type="button"
+              className="random-fx-toggle"
+              aria-expanded={!isFxUnitCollapsed}
+              onClick={handleFxUnitToggle}
+            >
+              {isFxUnitCollapsed ? 'FX unit' : 'Hide FX'}
+            </button>
+            <button type="button" className="random-fx-reset" onClick={handleRandomSoundFxReset}>
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="random-fx-grid">
