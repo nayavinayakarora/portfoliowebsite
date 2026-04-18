@@ -679,9 +679,6 @@ function App() {
     const handleResize = () => {
       const mobileViewport = window.innerWidth <= 760
       setIsMobileFxLayout(mobileViewport)
-      if (!mobileViewport) {
-        setIsFxUnitOpen(true)
-      }
     }
 
     handleResize()
@@ -1364,7 +1361,7 @@ function App() {
     applyRandomSoundFxControls(randomSoundFxControls)
   }, [randomSoundFxControls])
 
-  const isFxUnitCollapsed = isMobileFxLayout && !isFxUnitOpen
+  const isFxUnitCollapsed = !isFxUnitOpen
 
   return (
     <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
