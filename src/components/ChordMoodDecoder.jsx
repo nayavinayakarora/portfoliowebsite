@@ -165,16 +165,16 @@ export function ChordMoodDecoder() {
       const delayFeedback = context.createGain()
       const delayGain = context.createGain()
 
-      master.gain.value = 0.22
+      master.gain.value = 0.34
       pianoBus.gain.value = 1
       lowpass.type = 'lowpass'
       lowpass.frequency.value = 2900
       lowpass.Q.value = 0.22
       convolver.buffer = createImpulseResponse(context)
-      reverbGain.gain.value = 0.12
+      reverbGain.gain.value = 0.16
       delay.delayTime.value = 0.16
       delayFeedback.gain.value = 0.12
-      delayGain.gain.value = 0.07
+      delayGain.gain.value = 0.1
 
       pianoBus.connect(lowpass)
       lowpass.connect(master)
@@ -223,8 +223,8 @@ export function ChordMoodDecoder() {
       lowpass.Q.value = 0.28
 
       gain.gain.setValueAtTime(0.0001, now)
-      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.05 : 0.034, now + 0.016)
-      gain.gain.exponentialRampToValueAtTime(0.009, now + 0.18)
+      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.078 : 0.054, now + 0.016)
+      gain.gain.exponentialRampToValueAtTime(0.014, now + 0.18)
       gain.gain.exponentialRampToValueAtTime(0.0001, stopAt)
 
       bodyOscillator.connect(lowpass)
@@ -245,7 +245,7 @@ export function ChordMoodDecoder() {
     attackFilter.frequency.value = 1800
     attackFilter.Q.value = 0.7
     attackGain.gain.setValueAtTime(0.0001, now)
-    attackGain.gain.exponentialRampToValueAtTime(0.012, now + 0.01)
+    attackGain.gain.exponentialRampToValueAtTime(0.017, now + 0.01)
     attackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08)
     attackNoise.connect(attackFilter)
     attackFilter.connect(attackGain)

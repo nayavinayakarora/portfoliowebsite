@@ -265,6 +265,17 @@ const games = [
       },
     ],
   },
+  {
+    title: "Don't Witch Me Now",
+    note: 'Play via Gamecrafters Collective on Itch.io.',
+    image: '/images/dont-witch-me-now.png',
+    links: [
+      {
+        label: 'Play on Itch.io',
+        href: 'https://gamecrafterscollective.itch.io/dont-witch-me-now',
+      },
+    ],
+  },
 ]
 
 const listeningRoom = {
