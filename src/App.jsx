@@ -1592,7 +1592,7 @@ function App() {
         <section className="featured-section" id="featured">
           <div className="section-heading">
             <p className="eyebrow">Featured work</p>
-            <h2>Switch between your major bodies of work without leaving the page.</h2>
+            <h2>Explore major bodies of work in one place.</h2>
           </div>
 
           <div className="filter-bar" role="tablist" aria-label="Portfolio sections">
