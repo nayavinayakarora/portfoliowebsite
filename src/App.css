@@ -595,6 +595,8 @@ main,
 
 .hero-copy {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin: 0 auto;
   display: grid;
   justify-items: center;
@@ -603,6 +605,8 @@ main,
 .hero-section-with-bg .hero-copy--foreground {
   position: relative;
   z-index: 2;
+  width: min(980px, 100%);
+  min-width: 0;
   padding: clamp(1.5rem, 4vw, 3rem) clamp(0.8rem, 2vw, 2rem);
   max-width: min(980px, 100%);
 }
@@ -685,8 +689,10 @@ main,
   font-size: clamp(2.05rem, 3.1vw, 3.35rem);
   line-height: 0.98;
   max-width: none;
+  min-width: 0;
   width: 100%;
   margin-inline: auto;
+  overflow-wrap: break-word;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.22);
 }
 
@@ -912,6 +918,18 @@ main,
 .site-footer h2 {
   font-size: clamp(1.45rem, 2.5vw, 2.3rem);
   line-height: 0.98;
+}
+
+.section-heading .work-links {
+  margin-top: 0.75rem;
+}
+
+.games-subheading {
+  margin-top: 2rem;
+}
+
+.games-subheading h2 {
+  margin-top: 0.45rem;
 }
 
 .filter-bar {
@@ -2196,9 +2214,10 @@ main,
   .hero-copy h1 {
     max-width: none;
     width: 100%;
-    font-size: clamp(2.35rem, 9.6vw, 3.5rem);
-    line-height: 0.94;
-    letter-spacing: -0.04em;
+    font-size: clamp(1.8rem, 7vw, 2.15rem);
+    line-height: 1;
+    letter-spacing: 0;
+    text-wrap: pretty;
   }
 
   .hero-text {
@@ -2210,6 +2229,11 @@ main,
 
   .hero-section {
     text-align: left;
+  }
+
+  .hero-section-with-bg .hero-copy--foreground {
+    width: calc(100vw - 2rem);
+    max-width: calc(100vw - 2rem);
   }
 
   .hero-copy {

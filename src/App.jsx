@@ -172,6 +172,14 @@ const featuredCollections = [
       'Selected sound design, score, foley, and audio integration work for screen-based projects.',
     items: [
       {
+        title: "Don't Witch Me Now Gameplay",
+        date: 'March 2026',
+        role: 'Sound design and music composition',
+        blurb: 'Gameplay feature from Don’t Witch Me Now, with sound design and music composition by Vinayak Arora.',
+        href: 'https://vimeo.com/1185325506?fl=pl&fe=sh',
+        image: 'https://vumbnail.com/1185325506.jpg',
+      },
+      {
         title: 'Innerspace Gameplay - Game Audio and Music Portfolio',
         date: 'June 23, 2024',
         role: 'Gameplay reel',
@@ -287,6 +295,10 @@ const listeningRoom = {
     'https://open.spotify.com/embed/track/4Jdktu4oqI3YQDAaAeE24R?si=2d49f85948464a19&utm_source=oembed',
   ],
   liveVideos: [
+    {
+      title: "Don't Witch Me Now Gameplay",
+      href: 'https://www.youtube.com/embed/ojQI3clg40o?feature=oembed',
+    },
     {
       title: 'Queen Acapella | Tribute to Freddie Mercury | Live at TEDX IIIT Delhi',
       href: 'https://www.youtube.com/embed/--2P_crmRKI?feature=oembed',
@@ -630,7 +642,7 @@ function App() {
     spectrum: Array.from({ length: 32 }, () => 0),
   })
   const [activeCollection, setActiveCollection] = useState(featuredCollections[0].id)
-  const [activeAudioPanel, setActiveAudioPanel] = useState('vocal')
+  const [activeAudioPanel, setActiveAudioPanel] = useState('live')
   const [isEotdOpen, setIsEotdOpen] = useState(false)
   const [activeEotdSession, setActiveEotdSession] = useState(() => eotd.sessions[1] ?? eotd.sessions[0])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -643,9 +655,7 @@ function App() {
   const [isMobileFxLayout, setIsMobileFxLayout] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 760 : false,
   )
-  const [isFxUnitOpen, setIsFxUnitOpen] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth > 760 : true,
-  )
+  const [isFxUnitOpen, setIsFxUnitOpen] = useState(false)
 
   const ensureEngine = () => {
     if (!engineRef.current) {
@@ -1699,10 +1709,10 @@ function App() {
           <div className="audio-switcher">
             <div className="filter-bar" role="tablist" aria-label="Audio collections">
               {[
+                ['live', 'Live Videos'],
                 ['vocal', 'Vocal Arrangements'],
                 ['masters', 'Audio Masters'],
                 ['production', 'Production / Mix'],
-                ['live', 'Live Videos'],
               ].map(([value, label], index) => (
                 <button
                   key={value}
@@ -1863,12 +1873,17 @@ function App() {
         <section className="games-section" id="games">
           <div className="section-heading">
             <p className="eyebrow">Games</p>
-            <h2>Play a small audio challenge and explore released interactive work.</h2>
-          </div>
-
-          <div className="games-mini-grid">
-            <PitchMemoryGame />
-            <ChordMoodDecoder />
+            <h2>Gamecrafters Collective</h2>
+            <div className="work-links">
+              <a
+                href="https://www.gamecrafterscollective.com/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={handleActionClick}
+              >
+                Visit Gamecrafters Collective
+              </a>
+            </div>
           </div>
 
           <div className="games-grid">
@@ -1899,6 +1914,16 @@ function App() {
                 </div>
               </article>
             ))}
+          </div>
+
+          <div className="section-heading games-subheading">
+            <p className="eyebrow">Website games</p>
+            <h2>Play a small audio challenge and explore released interactive work.</h2>
+          </div>
+
+          <div className="games-mini-grid">
+            <PitchMemoryGame />
+            <ChordMoodDecoder />
           </div>
         </section>
 

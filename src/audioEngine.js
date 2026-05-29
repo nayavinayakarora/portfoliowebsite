@@ -47,7 +47,11 @@ export class SiteAudioEngine {
     this.windLimiterOutput = null
     this.scrollProgress = 0
     this.scrollActive = false
+    this.scrollFade = 0
     this.scrollIdleTimeout = null
+    this.scrollFadeFrame = null
+    this.lastScrollToneUpdate = 0
+    this.lastScrollProgressInput = null
   }
 
   async init() {
@@ -127,15 +131,18 @@ export class SiteAudioEngine {
   }
 
   setScrollProgress(value) {
-    this.scrollProgress = clamp(value, 0, 1)
+    const nextProgress = clamp(value, 0, 1)
+    const progressDelta = this.lastScrollProgressInput === null
+      ? 0.012
+      : Math.abs(nextProgress - this.lastScrollProgressInput)
+
+    this.scrollProgress = nextProgress
+    this.lastScrollProgressInput = nextProgress
     this.scrollActive = true
-    if (this.scrollIdleTimeout) {
-      clearTimeout(this.scrollIdleTimeout)
+    this.scrollFade = Math.max(this.scrollFade, clamp(progressDelta * 95, 0, 0.68))
+    if (!this.scrollFadeFrame) {
+      this._scheduleWindScrollFade()
     }
-    this.scrollIdleTimeout = setTimeout(() => {
-      this.scrollActive = false
-      this._updateWindScrollTone()
-    }, 90)
     this._updateWindScrollTone()
   }
 
@@ -161,6 +168,10 @@ export class SiteAudioEngine {
     this._stopWindScroll()
     if (this.scrollIdleTimeout) {
       clearTimeout(this.scrollIdleTimeout)
+    }
+    if (this.scrollFadeFrame && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(this.scrollFadeFrame)
+      this.scrollFadeFrame = null
     }
     this.assetTemplates.forEach((audio) => {
       audio.pause()
@@ -327,13 +338,13 @@ export class SiteAudioEngine {
 
       this.windFilter.type = 'lowpass'
       this.windFilter.frequency.value = 700
-      this.windGain.gain.value = 0.028
+      this.windGain.gain.value = 0.006
       this.windLimiter.threshold.value = -20
       this.windLimiter.knee.value = 7
       this.windLimiter.ratio.value = 10
       this.windLimiter.attack.value = 0.003
       this.windLimiter.release.value = 0.16
-      this.windLimiterOutput.gain.value = 0.92
+      this.windLimiterOutput.gain.value = 0.58
 
       this.windSource.connect(this.windFilter)
       this.windFilter.connect(this.windGain)
@@ -350,16 +361,47 @@ export class SiteAudioEngine {
 
     const progress = this.scrollProgress
     const currentTime = this.windContext.currentTime
-    const activityBoost = this.scrollActive ? 1 : 0
-    const targetGain = 0.026 + progress * 0.052 + activityBoost * (0.12 + progress * 0.12)
+    const activityBoost = this.scrollFade
+    const targetGain = 0.005 + progress * 0.012 + activityBoost * (0.038 + progress * 0.04)
     const idleFrequency = 900 + progress * 1300
     const activeFrequency = 1800 * ((16000 / 1800) ** progress)
-    const targetFrequency = this.scrollActive ? activeFrequency : idleFrequency
+    const targetFrequency = idleFrequency + ((activeFrequency - idleFrequency) * activityBoost)
 
     this.windGain.gain.cancelScheduledValues(currentTime)
-    this.windGain.gain.setTargetAtTime(targetGain, currentTime, this.scrollActive ? 0.05 : 0.12)
+    this.windGain.gain.setTargetAtTime(targetGain, currentTime, activityBoost > 0.42 ? 0.012 : 0.045)
 
     this.windFilter.frequency.cancelScheduledValues(currentTime)
-    this.windFilter.frequency.setTargetAtTime(targetFrequency, currentTime, this.scrollActive ? 0.05 : 0.12)
+    this.windFilter.frequency.setTargetAtTime(targetFrequency, currentTime, activityBoost > 0.42 ? 0.014 : 0.056)
+  }
+
+  _scheduleWindScrollFade() {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const tick = (time) => {
+      if (!this.lastScrollToneUpdate) {
+        this.lastScrollToneUpdate = time
+      }
+
+      const delta = Math.min(80, time - this.lastScrollToneUpdate)
+      this.lastScrollToneUpdate = time
+      this.scrollFade = Math.max(0, this.scrollFade - delta / 150)
+      this._updateWindScrollTone()
+
+      if (this.scrollFade > 0.01) {
+        this.scrollFadeFrame = window.requestAnimationFrame(tick)
+        return
+      }
+
+      this.scrollFade = 0
+      this.scrollActive = false
+      this.scrollFadeFrame = null
+      this.lastScrollToneUpdate = 0
+      this.lastScrollProgressInput = null
+      this._updateWindScrollTone()
+    }
+
+    this.scrollFadeFrame = window.requestAnimationFrame(tick)
   }
 }
