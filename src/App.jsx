@@ -296,7 +296,7 @@ const listeningRoom = {
   ],
   liveVideos: [
     {
-      title: "Don't Witch Me Now Gameplay",
+      title: 'Jacob Collier - Three Christmas Songs (An Abbey Road Live-To-Vinyl Cut)',
       href: 'https://www.youtube.com/embed/ojQI3clg40o?feature=oembed',
     },
     {
