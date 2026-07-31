@@ -1383,6 +1383,23 @@ function App() {
   }, [randomSoundFxControls])
 
   const isFxUnitCollapsed = !isFxUnitOpen
+  const isHeroScenePreview = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('view') === '3d'
+
+  if (isHeroScenePreview) {
+    return (
+      <main className="hero-scene-preview" aria-label="3D music scene preview">
+        <HeroScene
+          audioDataRef={heroAudioDataRef}
+          audioReactiveEnabled={false}
+          interactionSoundEnabled
+        />
+        <p className="hero-scene-instructions">
+          Drag the record to scratch · Tap pads to change the beat · Click the record to play or pause
+        </p>
+      </main>
+    )
+  }
 
   return (
     <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
@@ -1575,7 +1592,11 @@ function App() {
       <main>
         <section className="hero-section hero-section-with-bg" id="top">
           <div className="hero-entity-background" aria-hidden="true">
-            <HeroScene audioDataRef={heroAudioDataRef} audioReactiveEnabled={false} />
+            <HeroScene
+              audioDataRef={heroAudioDataRef}
+              audioReactiveEnabled={false}
+              interactionSoundEnabled={soundEnabled}
+            />
           </div>
           <div className="hero-entity-scrim" aria-hidden="true" />
 

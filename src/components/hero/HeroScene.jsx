@@ -2,17 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AdaptiveDpr } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { AtmosphereParticles } from './AtmosphereParticles'
-import { SignalNetwork } from './SignalNetwork'
-import { SoundCore } from './SoundCore'
-import { SoundStructures } from './SoundStructures'
-import {
-  buildSignalConnections,
-  buildStructureDescriptors,
-  getCameraDepthFromScroll,
-  getHarmonyFactor,
-  getStructurePosition,
-} from './soundSystem'
+import { MusicMachine } from './MusicMachine'
+import { getHarmonyFactor } from './soundSystem'
 
 const BACKDROP_VERTEX = `
 varying vec2 vUv;
@@ -43,14 +34,14 @@ void main() {
   float vignette = smoothstep(1.02, 0.15, radial);
   float flow = sin((uv.y * 8.0) + (uTime * 0.16)) * 0.5 + 0.5;
 
-  vec3 dark = vec3(0.02, 0.02, 0.06);
-  vec3 indigo = vec3(0.07, 0.08, 0.2);
-  vec3 violet = vec3(0.12, 0.08, 0.26);
-  vec3 blue = vec3(0.09, 0.18, 0.34);
+  vec3 dark = vec3(0.03, 0.036, 0.04);
+  vec3 charcoal = vec3(0.085, 0.095, 0.1);
+  vec3 brass = vec3(0.28, 0.17, 0.085);
+  vec3 teal = vec3(0.07, 0.2, 0.22);
 
-  vec3 color = mix(dark, indigo, smoothstep(0.0, 1.0, uv.y));
-  color = mix(color, violet, smoothstep(0.18, 0.86, uv.x));
-  color = mix(color, blue, flow * 0.24);
+  vec3 color = mix(dark, charcoal, smoothstep(0.0, 1.0, uv.y));
+  color = mix(color, brass, smoothstep(0.28, 0.98, uv.x) * 0.5);
+  color = mix(color, teal, flow * 0.22);
 
   float grain = (hash(uv * vec2(1100.0, 680.0) + uTime * 0.08) - 0.5) * 0.06;
   color += grain;
@@ -88,18 +79,15 @@ function Backdrop({ motionRef }) {
 }
 
 function SceneGraph({
-  descriptors,
-  connections,
-  structurePositionsRef,
   motionRef,
   audioDataRef,
   audioReactiveEnabled,
   compactView,
+  interactionSoundEnabled,
 }) {
   const scrollTargetRef = useRef(0)
   const keyLightRef = useRef(null)
   const rimLightRef = useRef(null)
-  const tempPosition = useRef(new THREE.Vector3())
 
   useEffect(() => {
     const updateScroll = () => {
@@ -149,22 +137,16 @@ function SceneGraph({
       }
     }
 
-    descriptors.forEach((descriptor) => {
-      getStructurePosition(
-        descriptor,
-        time,
-        pointer,
-        motion.harmony,
-        tempPosition.current,
-      )
-      structurePositionsRef.current[descriptor.index].copy(tempPosition.current)
-    })
-
-    const depthOffset = compactView ? 1.85 : 0
     const pointerScale = compactView ? 0.62 : 1
-    const cameraZ = getCameraDepthFromScroll(motion.scroll) + depthOffset
-    const cameraX = (pointer.x * 0.42 * pointerScale) + (Math.sin(time * 0.15) * 0.18)
-    const cameraY = (pointer.y * 0.28 * pointerScale) + (Math.cos(time * 0.18) * 0.14)
+    const cameraZ = compactView
+      ? THREE.MathUtils.lerp(10.8, 9.7, motion.scroll)
+      : THREE.MathUtils.lerp(8.7, 7.35, motion.scroll)
+    const cameraX = (pointer.x * 0.42 * pointerScale)
+      + (Math.sin(time * 0.15) * 0.18)
+      + (compactView ? 0 : motion.scroll * 0.55)
+    const cameraY = (pointer.y * 0.28 * pointerScale)
+      + (Math.cos(time * 0.18) * 0.14)
+      + (motion.scroll * 0.22)
 
     state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, cameraX, 0.04)
     state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, cameraY, 0.04)
@@ -174,7 +156,7 @@ function SceneGraph({
     if (keyLightRef.current) {
       keyLightRef.current.position.x = THREE.MathUtils.lerp(keyLightRef.current.position.x, 2.2 + (pointer.x * 1.4), 0.06)
       keyLightRef.current.position.y = THREE.MathUtils.lerp(keyLightRef.current.position.y, 1.8 + (pointer.y * 0.8), 0.06)
-      keyLightRef.current.intensity = 0.8 + (motion.audio.level * 0.2)
+      keyLightRef.current.intensity = 1.2 + (motion.audio.level * 0.5)
     }
 
     if (rimLightRef.current) {
@@ -182,7 +164,7 @@ function SceneGraph({
       rimLightRef.current.position.y = THREE.MathUtils.lerp(rimLightRef.current.position.y, -1.3 + (pointer.y * 0.4), 0.06)
       rimLightRef.current.intensity = THREE.MathUtils.lerp(
         rimLightRef.current.intensity,
-        0.44 + (motion.harmony * 0.2),
+        0.82 + (motion.harmony * 0.34),
         Math.min(1, delta * 4),
       )
     }
@@ -190,38 +172,29 @@ function SceneGraph({
 
   return (
     <>
-      <color attach="background" args={['#06070e']} />
-      <fog attach="fog" args={['#070911', 9, 17]} />
-      <ambientLight intensity={0.28} color="#4955b8" />
-      <directionalLight ref={keyLightRef} intensity={0.86} color="#4fa8ff" position={[2.2, 1.8, 4.2]} />
-      <directionalLight ref={rimLightRef} intensity={0.44} color="#c69a62" position={[-2.5, -1.3, 3.4]} />
-      <pointLight intensity={0.48} color="#7f67eb" position={[0, 0.4, 1.8]} distance={10} />
+      <color attach="background" args={['#07090b']} />
+      <fog attach="fog" args={['#080a0d', 10, 18]} />
+      <ambientLight intensity={0.72} color="#9a856d" />
+      <directionalLight ref={keyLightRef} intensity={1.28} color="#86d2de" position={[2.2, 1.8, 4.2]} />
+      <directionalLight ref={rimLightRef} intensity={0.9} color="#e0ae70" position={[-2.5, -1.3, 3.4]} />
+      <pointLight intensity={1.65} color="#e0aa66" position={[2.2, 0.6, 3]} distance={11} />
       <Backdrop motionRef={motionRef} />
-      <AtmosphereParticles motionRef={motionRef} />
-      <SignalNetwork
-        connections={connections}
-        structurePositionsRef={structurePositionsRef}
+      <MusicMachine
         motionRef={motionRef}
+        compactView={compactView}
+        interactionSoundEnabled={interactionSoundEnabled}
       />
-      <SoundStructures
-        descriptors={descriptors}
-        structurePositionsRef={structurePositionsRef}
-        motionRef={motionRef}
-      />
-      <SoundCore motionRef={motionRef} />
     </>
   )
 }
 
-export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
+export function HeroScene({
+  audioDataRef,
+  audioReactiveEnabled,
+  interactionSoundEnabled = true,
+}) {
   const [compactView, setCompactView] = useState(false)
   const [reducedMotionMode, setReducedMotionMode] = useState(false)
-  const descriptors = useMemo(() => buildStructureDescriptors(), [])
-  const connections = useMemo(() => buildSignalConnections(descriptors.length), [descriptors.length])
-
-  const structurePositionsRef = useRef(
-    descriptors.map(() => new THREE.Vector3()),
-  )
 
   const motionRef = useRef({
     pointer: new THREE.Vector2(),
@@ -271,13 +244,11 @@ export function HeroScene({ audioDataRef, audioReactiveEnabled }) {
       >
         <AdaptiveDpr pixelated />
         <SceneGraph
-          descriptors={descriptors}
-          connections={connections}
-          structurePositionsRef={structurePositionsRef}
           motionRef={motionRef}
           audioDataRef={audioDataRef}
           audioReactiveEnabled={audioReactiveEnabled}
           compactView={compactView}
+          interactionSoundEnabled={interactionSoundEnabled}
         />
       </Canvas>
     </div>
