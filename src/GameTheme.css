@@ -1,0 +1,153 @@
+@font-face { font-family: 'Pixelify Sans'; src: url('/fonts/PixelifySans.ttf') format('truetype'); font-weight: 400 700; font-style: normal; font-display: swap; }
+
+.portfolio-shell {
+  --font-display: 'Pixelify Sans', monospace;
+  --game-paper: #fff2d9;
+  --game-ink: #352a28;
+  --game-line: #8c6749;
+  --game-accent: #b95740;
+  --bg: #fff2d9;
+  --bg-secondary: #f6e3c4;
+  --panel: #fff8e8;
+  --panel-strong: #fbecd0;
+  --text-strong: #352a28;
+  --text-soft: #635044;
+  --border-soft: #cdb48e;
+  --border-strong: #8c6749;
+  --accent-blue: #b95740;
+  --accent-cyan: #896146;
+  --accent-violet: #c49868;
+  --header-bg: #fff2d9;
+  --chip-bg: #fff8e8;
+  --surface-muted: #fbecd0;
+  --surface-alt: #fff8e8;
+  color: var(--game-ink);
+  background: var(--bg);
+}
+[data-theme='dark'] .portfolio-shell {
+  --game-paper: #080808;
+  --game-ink: #f4dcb4;
+  --game-line: #a37c55;
+  --game-accent: #bb7853;
+  --bg: #030303;
+  --bg-secondary: #0a0a0a;
+  --panel: #101010;
+  --panel-strong: #171511;
+  --text-strong: #f4dcb4;
+  --text-soft: #c2b39c;
+  --border-soft: #564333;
+  --border-strong: #a37c55;
+  --header-bg: #030303;
+  --chip-bg: #14120f;
+  --surface-muted: #14120f;
+  --surface-alt: #0e0e0e;
+}
+.portfolio-shell::before, .portfolio-shell::after { content: none; }
+.portfolio-shell .site-header { border-bottom: 2px solid var(--game-line); box-shadow: 0 4px 0 var(--bg-secondary); background: var(--bg); backdrop-filter: none; }
+.portfolio-shell .site-header::after { content: none; }
+.portfolio-shell .brand-photo-mark { border-radius: 4px; outline-color: var(--game-line); box-shadow: 3px 3px 0 var(--border-soft); }
+.portfolio-shell .brand-copy strong { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; }
+.portfolio-shell .site-nav-link { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; border-radius: 2px; }
+.portfolio-shell .site-nav-link.active { color: var(--game-ink); background: var(--panel); border: 1px solid var(--game-line); box-shadow: 3px 3px 0 var(--border-soft); }
+.portfolio-shell .primary-button, .portfolio-shell .secondary-button, .portfolio-shell .filter-chip,
+.portfolio-shell .header-sound-button, .portfolio-shell .work-links a, .portfolio-shell .support-link-grid a,
+.portfolio-shell .footer-link-grid a, .portfolio-shell .contact-card a, .portfolio-shell .eotd-toggle-indicator {
+  border-radius: 2px;
+  border: 2px solid var(--game-line);
+  box-shadow: 3px 4px 0 var(--border-soft);
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 120ms, box-shadow 120ms, background 120ms;
+}
+.portfolio-shell .primary-button, .portfolio-shell .filter-chip.active { background: var(--game-accent); border-color: var(--game-ink); color: #fff7df; }
+.portfolio-shell .secondary-button, .portfolio-shell .filter-chip:not(.active), .portfolio-shell .header-sound-button { background: var(--panel); color: var(--game-ink); }
+.portfolio-shell .primary-button:hover, .portfolio-shell .secondary-button:hover, .portfolio-shell .filter-chip:hover,
+.portfolio-shell .work-links a:hover, .portfolio-shell .support-link-grid a:hover, .portfolio-shell .footer-link-grid a:hover, .portfolio-shell .contact-card a:hover { transform: translate(-1px, -1px); box-shadow: 4px 5px 0 var(--border-soft); }
+.portfolio-shell .primary-button:active, .portfolio-shell .secondary-button:active, .portfolio-shell .filter-chip:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--border-soft); }
+.portfolio-shell h2, .portfolio-shell h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.3; }
+.portfolio-shell .section-heading h2, .portfolio-shell .services-copy h2, .portfolio-shell .site-footer h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+  -webkit-text-stroke: 0.24px var(--bg);
+  paint-order: fill stroke;
+}
+.portfolio-shell .collection-copy h3 {
+  font-size: clamp(1.18rem, 1.7vw, 1.6rem);
+  letter-spacing: 0.015em;
+  -webkit-text-stroke: 0.24px var(--panel);
+  paint-order: fill stroke;
+}
+.portfolio-shell .eyebrow, .portfolio-shell .panel-label, .portfolio-shell .collection-eyebrow { font-family: var(--font-display); font-size: 0.95rem; letter-spacing: 0.09em; }
+.portfolio-shell .featured-section > .section-heading .eyebrow::before { content: '01 / '; }
+.portfolio-shell .listening-section > .section-heading .eyebrow::before { content: '02 / '; }
+.portfolio-shell .games-section > .section-heading .eyebrow::before { content: '03 / '; }
+.portfolio-shell .services-copy > .eyebrow::before { content: '04 / '; }
+.portfolio-shell .contact-section > .section-heading .eyebrow::before { content: '05 / '; }
+.portfolio-shell .featured-section, .portfolio-shell .listening-section, .portfolio-shell .games-section,
+.portfolio-shell .services-section, .portfolio-shell .contact-section { border-top: 2px solid var(--game-line); }
+.portfolio-shell .active-collection, .portfolio-shell .playlist-panel, .portfolio-shell .embed-section,
+.portfolio-shell .work-card, .portfolio-shell .game-card, .portfolio-shell .video-card,
+.portfolio-shell .service-card, .portfolio-shell .contact-card, .portfolio-shell .eotd-accordion,
+.portfolio-shell .eotd-session-card, .portfolio-shell .eotd-player,
+.portfolio-shell .pitch-game-shell, .portfolio-shell .chord-game-shell,
+.portfolio-shell .pitch-game-panel, .portfolio-shell .chord-game-panel {
+  border-radius: 3px;
+  background: var(--panel);
+  border: 2px solid var(--border-soft);
+  box-shadow: 5px 5px 0 var(--bg-secondary);
+  backdrop-filter: none;
+}
+.portfolio-shell .work-card::after, .portfolio-shell .game-card::after, .portfolio-shell .service-card::after, .portfolio-shell .contact-card::after { content: none; }
+.portfolio-shell .active-collection::before, .portfolio-shell .playlist-panel::before, .portfolio-shell .game-card::before,
+.portfolio-shell .service-card::before, .portfolio-shell .contact-card::before, .portfolio-shell .video-card::before { content: none; }
+.portfolio-shell .pitch-game-stage, .portfolio-shell .chord-game-stage, .portfolio-shell .chord-option,
+.portfolio-shell .pitch-result-card, .portfolio-shell .pitch-game-score-pill, .portfolio-shell .pitch-game-nudge { border-radius: 2px; border-color: var(--border-soft); background: var(--panel-strong); }
+.portfolio-shell .work-cover, .portfolio-shell .game-art, .portfolio-shell .work-cover-media, .portfolio-shell .game-art-media { border-radius: 2px; }
+.portfolio-shell .work-cover > span, .portfolio-shell .game-art > span { border-radius: 2px; background: #231c17ed; color: #fff4dc; border: 1px solid #d5b786; }
+.portfolio-shell .contact-icon, .portfolio-shell .footer-link-icon { border-radius: 3px; background: var(--bg-secondary); border: 1px solid var(--game-line); box-shadow: 2px 2px 0 var(--border-soft); }
+.portfolio-shell .random-fx-unit { background: var(--panel); border-radius: 4px; border: 2px solid var(--game-line); box-shadow: 4px 4px 0 var(--bg-secondary); backdrop-filter: none; }
+.portfolio-shell .random-fx-unit::before { content: none; }
+.portfolio-shell .random-fx-unit strong { font-family: var(--font-display); }
+.portfolio-shell .site-footer { border-top: 4px solid var(--game-line); }
+
+/* The performer stands on a flat pixel stage; no generated artwork or 3D lighting. */
+.portfolio-shell .hero-section--pixels { border-radius: 3px; border: 2px solid var(--game-line); background: #ffebc9; }
+.portfolio-shell .pixel-hero-scene { background: linear-gradient(#ffe5bd, #fff2d5 66%, #f3d6a3); }
+.portfolio-shell .hero-section--pixels .pixel-hero-copy { color: var(--game-ink); }
+.portfolio-shell .hero-section--pixels h1 { color: var(--game-ink); font-family: var(--font-display); font-weight: 500; font-size: clamp(3.3rem, 5.5vw, 5.7rem); line-height: 0.97; letter-spacing: -0.025em; }
+.portfolio-shell .hero-section--pixels .eyebrow { color: #8d5740; font-size: 0.86rem; }
+.portfolio-shell .hero-section--pixels .pixel-hero-copy p:not(.eyebrow) { color: #594537; }
+.portfolio-shell .hero-section--pixels .secondary-button { color: var(--game-ink); background: var(--panel); border: 2px solid var(--game-line); }
+.portfolio-shell .pixel-hero-instructions button { color: #594537; border-color: #9c7145; font-family: var(--font-display); font-size: 0.95rem; }
+.portfolio-shell .pixel-sound-state { color: #765c47; }
+.portfolio-shell .pixel-studio-art { color: #352a28; }
+.portfolio-shell .pixel-studio-art svg { filter: drop-shadow(2px 3px 0 #ffe2b1); }
+.portfolio-shell .pixel-studio-portal > span { color: var(--game-ink); background: var(--panel); border-color: var(--game-line); box-shadow: 3px 3px 0 var(--border-soft); }
+.portfolio-shell .pixel-studio-portal:hover > span { background: var(--panel-strong); box-shadow: 4px 4px 0 var(--border-soft); }
+.portfolio-shell .pixel-studio-portal:active > span { box-shadow: 1px 1px 0 var(--border-soft); }
+[data-theme='dark'] .portfolio-shell .hero-section--pixels { background: #080808; }
+[data-theme='dark'] .portfolio-shell .pixel-hero-scene { background: linear-gradient(#030303, #080808 66%, #16120d); }
+[data-theme='dark'] .portfolio-shell .hero-section--pixels .eyebrow { color: #d5af7c; }
+[data-theme='dark'] .portfolio-shell .hero-section--pixels .pixel-hero-copy p:not(.eyebrow),
+[data-theme='dark'] .portfolio-shell .pixel-hero-instructions button, [data-theme='dark'] .portfolio-shell .pixel-sound-state { color: #c6b99f; }
+[data-theme='dark'] .portfolio-shell .pixel-studio-art { color: #f5e6c9; }
+[data-theme='dark'] .portfolio-shell .pixel-studio-art svg { filter: drop-shadow(2px 3px 0 #141611); }
+
+.studio-page { --font-display: 'Pixelify Sans', monospace; }
+.studio-page .studio-rack, .studio-page .studio-scope, .studio-page .studio-keyboard-module { border-radius: 3px; box-shadow: 4px 4px 0 #060806; }
+.studio-page .studio-rack-heading h2 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; }
+.studio-page .studio-module-number { font-size: 1.7rem; }
+
+@media (max-width: 759px) {
+  .portfolio-shell .hero-section--pixels h1 { font-size: clamp(2.75rem, 11vw, 4rem); }
+  .portfolio-shell .pixel-hero-instructions button { font-size: 0.82rem; }
+  .portfolio-shell .site-nav.open { background: var(--panel); border: 2px solid var(--game-line); border-radius: 3px; box-shadow: 4px 5px 0 var(--bg-secondary); backdrop-filter: none; }
+  .portfolio-shell .site-nav.open .site-nav-link { background: var(--panel); color: var(--game-ink); border-radius: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-shell .primary-button, .portfolio-shell .secondary-button, .portfolio-shell .filter-chip,
+  .portfolio-shell .work-links a, .portfolio-shell .support-link-grid a, .portfolio-shell .footer-link-grid a { transition: none; }
+}

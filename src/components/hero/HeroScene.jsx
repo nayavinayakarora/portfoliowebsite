@@ -193,8 +193,28 @@ export function HeroScene({
   audioReactiveEnabled,
   interactionSoundEnabled = true,
 }) {
+  const shellRef = useRef(null)
   const [compactView, setCompactView] = useState(false)
   const [reducedMotionMode, setReducedMotionMode] = useState(false)
+  const [sceneVisible, setSceneVisible] = useState(true)
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden)
+
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return undefined
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setSceneVisible(entry.isIntersecting)
+    })
+    observer.observe(shell)
+    return () => observer.disconnect()
+  }, [reducedMotionMode])
+
+  useEffect(() => {
+    const updateVisibility = () => setPageVisible(!document.hidden)
+    document.addEventListener('visibilitychange', updateVisibility)
+    return () => document.removeEventListener('visibilitychange', updateVisibility)
+  }, [])
 
   const motionRef = useRef({
     pointer: new THREE.Vector2(),
@@ -228,7 +248,7 @@ export function HeroScene({
 
   if (reducedMotionMode) {
     return (
-      <div className="hero-mobile-fallback" aria-label="Living Sound Entity mobile fallback">
+      <div ref={shellRef} className="hero-mobile-fallback" aria-label="Music studio background">
         <div className="hero-mobile-gradient" />
         <div className="hero-mobile-noise" />
       </div>
@@ -236,8 +256,9 @@ export function HeroScene({
   }
 
   return (
-    <div className="hero-scene-shell" aria-hidden="true">
+    <div ref={shellRef} className="hero-scene-shell" aria-hidden="true">
       <Canvas
+        frameloop={sceneVisible && pageVisible ? 'always' : 'never'}
         camera={{ fov: compactView ? 54 : 45, position: [0, 0, compactView ? 10.4 : 8], near: 0.1, far: 60 }}
         dpr={compactView ? [1, 1.2] : [1, 1.5]}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}

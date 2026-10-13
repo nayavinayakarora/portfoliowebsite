@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { HERO_BPM, createInstrumentAudio, getRecordPosition, holdRecord, setTransportMotion, startTransport } from './heroInstrumentAudio'
 
 const WAVE_POINTS = 144
 const EQ_BAR_COUNT = 48
@@ -92,6 +93,7 @@ function VinylInstrument({
   compactView,
   isPlaying,
   onRecordToggle,
+  onScratchStart,
   onScratch,
   onScratchEnd,
 }) {
@@ -105,6 +107,8 @@ function VinylInstrument({
     lastX: 0,
     moved: false,
     velocity: 0,
+    lastAt: 0,
+    distance: 0,
   })
 
   useEffect(() => {
@@ -127,7 +131,7 @@ function VinylInstrument({
 
     if (recordRef.current) {
       const drag = dragRef.current
-      const transportSpeed = isPlaying ? 0.48 + motion.scroll * 0.7 : 0
+      const transportSpeed = isPlaying && !drag.active ? 0.48 : 0
       recordRef.current.rotation.y -= delta * transportSpeed
       recordRef.current.rotation.y += drag.velocity * delta
       drag.velocity = THREE.MathUtils.lerp(drag.velocity, 0, Math.min(1, delta * 4.5))
@@ -178,7 +182,10 @@ function VinylInstrument({
             dragRef.current.active = true
             dragRef.current.pointerId = event.pointerId
             dragRef.current.lastX = event.clientX
+            dragRef.current.lastAt = event.timeStamp
             dragRef.current.moved = false
+            dragRef.current.distance = 0
+            onScratchStart()
             document.body.style.cursor = 'grabbing'
           }}
           onPointerMove={(event) => {
@@ -186,10 +193,13 @@ function VinylInstrument({
             if (!drag.active || drag.pointerId !== event.pointerId) return
             event.stopPropagation()
             const deltaX = event.clientX - drag.lastX
+            const elapsed = (event.timeStamp - drag.lastAt) / 1000
             drag.lastX = event.clientX
-            drag.moved = drag.moved || Math.abs(deltaX) > 2
+            drag.lastAt = event.timeStamp
+            drag.distance += Math.abs(deltaX)
+            drag.moved = drag.distance > 2
             drag.velocity = THREE.MathUtils.clamp(deltaX * 0.72, -18, 18)
-            onScratch(deltaX)
+            onScratch(deltaX, elapsed)
           }}
           onPointerUp={(event) => {
             const drag = dragRef.current
@@ -275,13 +285,16 @@ function StepSequencer({
   isPlaying,
   onStep,
   onPadToggle,
+  audioRef,
 }) {
   const padRefs = useRef([])
   const lastStepRef = useRef(-1)
 
   useFrame((state) => {
     const time = state.clock.elapsedTime
-    const activeStep = isPlaying ? Math.floor(time * 4.7) % STEP_COUNT : -1
+    const engine = audioRef.current
+    const beatTime = engine?.transport ? getRecordPosition(engine) : time
+    const activeStep = isPlaying && !engine?.scratching ? Math.floor(beatTime * HERO_BPM / 60 * 4) % STEP_COUNT : -1
 
     if (activeStep !== lastStepRef.current) {
       lastStepRef.current = activeStep
@@ -354,115 +367,6 @@ function StepSequencer({
   )
 }
 
-function createInstrumentAudio() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext
-  if (!AudioContextClass) return null
-
-  const context = new AudioContextClass()
-  const filter = context.createBiquadFilter()
-  const compressor = context.createDynamicsCompressor()
-  const master = context.createGain()
-  const noiseBuffer = context.createBuffer(1, context.sampleRate * 0.12, context.sampleRate)
-  const noise = noiseBuffer.getChannelData(0)
-  const loopDuration = 4
-  const loopBuffer = context.createBuffer(1, context.sampleRate * loopDuration, context.sampleRate)
-  const reverseLoopBuffer = context.createBuffer(1, context.sampleRate * loopDuration, context.sampleRate)
-  const loop = loopBuffer.getChannelData(0)
-  const reverseLoop = reverseLoopBuffer.getChannelData(0)
-  const chord = [110, 130.81, 164.81, 196]
-
-  for (let index = 0; index < noise.length; index += 1) {
-    noise[index] = (Math.random() * 2) - 1
-  }
-
-  for (let index = 0; index < loop.length; index += 1) {
-    const time = index / context.sampleRate
-    const eighth = (time * 4) % 1
-    const pluckEnvelope = Math.exp(-eighth * 7)
-    const chordTone = chord.reduce((sum, frequency, chordIndex) => (
-      sum + Math.sin(Math.PI * 2 * frequency * time + chordIndex * 0.42)
-    ), 0) / chord.length
-    const bassEnvelope = Math.exp(-((time * 2) % 1) * 9)
-    const bass = Math.sin(Math.PI * 2 * 55 * time) * bassEnvelope
-    const texture = (Math.random() * 2 - 1) * 0.018
-    loop[index] = (chordTone * pluckEnvelope * 0.34) + (bass * 0.22) + texture
-  }
-
-  for (let index = 0; index < loop.length; index += 1) {
-    reverseLoop[index] = loop[loop.length - index - 1]
-  }
-
-  filter.type = 'lowpass'
-  filter.frequency.value = 6200
-  filter.Q.value = 0.8
-  compressor.threshold.value = -18
-  compressor.knee.value = 12
-  compressor.ratio.value = 8
-  compressor.attack.value = 0.004
-  compressor.release.value = 0.12
-  master.gain.value = 0.16
-
-  filter.connect(compressor)
-  compressor.connect(master)
-  master.connect(context.destination)
-
-  return {
-    context,
-    filter,
-    master,
-    noiseBuffer,
-    loopBuffer,
-    reverseLoopBuffer,
-    transport: null,
-    transportDirection: 1,
-    lastScratchAt: 0,
-  }
-}
-
-function startTransport(engine, direction = 1, rate = 1, audible = true) {
-  const now = engine.context.currentTime
-  const previous = engine.transport
-  const source = engine.context.createBufferSource()
-  const gain = engine.context.createGain()
-
-  source.buffer = direction < 0 ? engine.reverseLoopBuffer : engine.loopBuffer
-  source.loop = true
-  source.playbackRate.value = rate
-  gain.gain.setValueAtTime(0.001, now)
-  gain.gain.exponentialRampToValueAtTime(audible ? 0.095 : 0.001, now + 0.025)
-  source.connect(gain)
-  gain.connect(engine.filter)
-  source.start(now)
-
-  if (previous) {
-    previous.gain.gain.cancelScheduledValues(now)
-    previous.gain.gain.setValueAtTime(
-      Math.max(0.001, previous.gain.gain.value),
-      now,
-    )
-    previous.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025)
-    previous.source.stop(now + 0.04)
-  }
-
-  engine.transport = { source, gain }
-  engine.transportDirection = direction
-}
-
-function setTransportMotion(engine, amount, audible) {
-  const direction = amount < 0 ? -1 : 1
-  const rate = THREE.MathUtils.clamp(Math.abs(amount) / 3.5, 0.22, 4)
-
-  if (!engine.transport || engine.transportDirection !== direction) {
-    startTransport(engine, direction, rate, audible)
-    return
-  }
-
-  engine.transport.source.playbackRate.setTargetAtTime(
-    rate,
-    engine.context.currentTime,
-    0.018,
-  )
-}
 
 export function MusicMachine({ motionRef, compactView, interactionSoundEnabled = true }) {
   const stageRef = useRef(null)
@@ -487,59 +391,45 @@ export function MusicMachine({ motionRef, compactView, interactionSoundEnabled =
     return engine
   }
 
+  const playAccent = (engine, step, immediate = false) => {
+    if (!engine) return
+    const source = engine.context.createBufferSource()
+    const gain = engine.context.createGain()
+    source.buffer = engine.drums[step % 4 === 0 ? 'kick' : step % 4 === 2 ? 'snare' : 'hat']
+    gain.gain.value = immediate ? 0.24 : 0.07
+    source.connect(gain)
+    gain.connect(engine.filter)
+    source.onended = () => { source.disconnect(); gain.disconnect() }
+    source.start()
+    interactionPulseRef.current = step % 4 === 0 ? 0.7 : 0.42
+  }
+
   const triggerStep = (step) => {
     if (!audioArmed || !pattern[step]) return
-    const engine = audioRef.current
-    if (!engine) return
-
-    const { context, filter } = engine
-    const now = context.currentTime
-    const oscillator = context.createOscillator()
-    const gain = context.createGain()
-    const isDownbeat = step % 4 === 0
-
-    oscillator.type = isDownbeat ? 'sine' : 'triangle'
-    oscillator.frequency.setValueAtTime(isDownbeat ? 118 : 310 + (step % 5) * 42, now)
-    oscillator.frequency.exponentialRampToValueAtTime(isDownbeat ? 46 : 155, now + 0.11)
-    gain.gain.setValueAtTime(isDownbeat ? 0.34 : 0.13, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + (isDownbeat ? 0.2 : 0.09))
-    oscillator.connect(gain)
-    gain.connect(filter)
-    oscillator.start(now)
-    oscillator.stop(now + 0.22)
-    interactionPulseRef.current = isDownbeat ? 0.7 : 0.42
+    playAccent(audioRef.current, step)
   }
 
-  const triggerScratch = (amount) => {
+  const triggerScratch = (amount, elapsed) => {
     const engine = ensureAudio()
-    if (!engine || Math.abs(amount) < 0.5) return
-    setTransportMotion(engine, amount, true)
-    const now = engine.context.currentTime
-    if (now - engine.lastScratchAt < 0.03) return
-    engine.lastScratchAt = now
-
-    const source = engine.context.createBufferSource()
-    const scratchFilter = engine.context.createBiquadFilter()
-    const gain = engine.context.createGain()
-    const intensity = THREE.MathUtils.clamp(Math.abs(amount) / 18, 0.12, 0.8)
-
-    source.buffer = engine.noiseBuffer
-    scratchFilter.type = 'bandpass'
-    scratchFilter.frequency.value = 700 + intensity * 3200
-    scratchFilter.Q.value = 2.4
-    gain.gain.setValueAtTime(intensity * 0.28, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09)
-    source.connect(scratchFilter)
-    scratchFilter.connect(gain)
-    gain.connect(engine.filter)
-    source.start(now)
-    source.stop(now + 0.095)
-    interactionPulseRef.current = Math.max(interactionPulseRef.current, intensity)
+    if (!engine) return
+    engine.scratching = true
+    clearTimeout(engine.scratchHoldTimeout)
+    if (Math.abs(amount) < 0.25) holdRecord(engine)
+    else setTransportMotion(engine, amount, elapsed)
+    engine.scratchHoldTimeout = setTimeout(() => holdRecord(engine), 50)
+    interactionPulseRef.current = THREE.MathUtils.clamp(Math.abs(amount) / 18, 0.12, 0.8)
   }
+
+  useEffect(() => {
+    audioRef.current?.master.gain.setTargetAtTime(interactionSoundEnabled ? 0.28 : 0, audioRef.current.context.currentTime, 0.02)
+  }, [interactionSoundEnabled])
 
   useEffect(() => () => {
     document.body.style.cursor = ''
-    if (audioRef.current) audioRef.current.context.close()
+    if (audioRef.current) {
+      clearTimeout(audioRef.current.scratchHoldTimeout)
+      audioRef.current.context.close().catch(() => {})
+    }
   }, [])
 
   useFrame((state, delta) => {
@@ -579,28 +469,36 @@ export function MusicMachine({ motionRef, compactView, interactionSoundEnabled =
         motionRef={motionRef}
         compactView={compactView}
         isPlaying={isPlaying}
+        onScratchStart={() => {
+          const engine = audioRef.current
+          if (!engine) return
+          engine.scratching = true
+          holdRecord(engine)
+        }}
         onRecordToggle={() => {
           const wasArmed = audioArmed
           const engine = ensureAudio()
+          if (engine) {
+            clearTimeout(engine.scratchHoldTimeout)
+            engine.scratching = false
+          }
           if (wasArmed) {
-            setIsPlaying((current) => {
-              const next = !current
-              if (engine?.transport) {
-                engine.transport.gain.gain.setTargetAtTime(
-                  next ? 0.095 : 0.001,
-                  engine.context.currentTime,
-                  0.025,
-                )
-              }
-              return next
-            })
+            const next = !isPlaying
+            setIsPlaying(next)
+            if (engine) {
+              if (next) startTransport(engine)
+              else holdRecord(engine)
+            }
           }
         }}
         onScratch={triggerScratch}
         onScratchEnd={() => {
           const engine = audioRef.current
           if (!engine) return
-          startTransport(engine, 1, 1, isPlaying)
+          clearTimeout(engine.scratchHoldTimeout)
+          engine.scratching = false
+          if (isPlaying) startTransport(engine)
+          else holdRecord(engine)
         }}
       />
       <StepSequencer
@@ -609,8 +507,9 @@ export function MusicMachine({ motionRef, compactView, interactionSoundEnabled =
         pattern={pattern}
         isPlaying={isPlaying}
         onStep={triggerStep}
+        audioRef={audioRef}
         onPadToggle={(index) => {
-          ensureAudio()
+          playAccent(ensureAudio(), index, true)
           setPattern((current) => current.map((active, padIndex) => (
             padIndex === index ? !active : active
           )))

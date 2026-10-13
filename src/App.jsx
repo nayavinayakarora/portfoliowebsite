@@ -1,9 +1,44 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import './components/hero/PixelHero.css'
+import './GameTheme.css'
 import { SiteAudioEngine } from './audioEngine'
-import { HeroScene } from './components/hero/HeroScene'
 import { ChordMoodDecoder } from './components/ChordMoodDecoder'
 import { PitchMemoryGame } from './components/PitchMemoryGame'
+import { DiscCursor } from './components/DiscCursor'
+
+const LazyHeroScene = lazy(() =>
+  import('./components/hero/PixelHero').then((module) => ({ default: module.HeroScene })),
+)
+
+const Studio = lazy(() => import('./components/Studio'))
+
+function HeroScene(props) {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (window.requestIdleCallback) {
+      const idle = window.requestIdleCallback(() => setReady(true), { timeout: 800 })
+      return () => window.cancelIdleCallback(idle)
+    }
+    const timer = window.setTimeout(() => setReady(true), 200)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  const fallback = (
+    <div className="instrument-stage-placeholder" aria-hidden="true">
+      <div className="instrument-stage-wave">
+        {Array.from({ length: 36 }, (_, index) => (
+          <span key={index} style={{ height: `${18 + Math.sin(index * 0.75) ** 2 * 56}px` }} />
+        ))}
+      </div>
+    </div>
+  )
+
+  return ready ? (
+    <Suspense fallback={fallback}><LazyHeroScene {...props} /></Suspense>
+  ) : fallback
+}
 
 const RANDOM_SOUND_MANIFEST_PATH = '/audio/random-sounds/manifest.json'
 
@@ -50,7 +85,7 @@ const signalLinks = [
   { label: 'Buy Me a Coffee', href: 'https://buymeacoffee.com/vinayakarora' },
   {
     label: 'Resume PDF',
-    href: 'https://media.journoportfolio.com/users/413008/uploads/935497f9-de02-4171-a069-57d961a23c8e.pdf',
+    href: '/cv/Vinayak_Arora_Creative_CV.pdf',
   },
 ]
 
@@ -295,6 +330,10 @@ const listeningRoom = {
     'https://open.spotify.com/embed/track/4Jdktu4oqI3YQDAaAeE24R?si=2d49f85948464a19&utm_source=oembed',
   ],
   liveVideos: [
+    {
+      title: 'Moventhisizer: Turning Body Movement into Music | Live Exhibition',
+      href: 'https://www.youtube.com/embed/3c4PBIxCvmA?feature=oembed',
+    },
     {
       title: 'Jacob Collier - Three Christmas Songs (An Abbey Road Live-To-Vinyl Cut)',
       href: 'https://www.youtube.com/embed/ojQI3clg40o?feature=oembed',
@@ -624,7 +663,7 @@ function LinkIcon({ type }) {
   }
 }
 
-function App() {
+function PortfolioApp() {
   const shellRef = useRef(null)
   const engineRef = useRef(null)
   const randomSoundDeckRef = useRef([])
@@ -956,9 +995,10 @@ function App() {
     { label: 'Instagram', href: 'https://www.instagram.com/vinayak.arora/', icon: 'instagram' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/vinayak-arora-26735312b/', icon: 'linkedin' },
     { label: 'Buy Me a Coffee', href: 'https://buymeacoffee.com/vinayakarora', icon: 'coffee' },
+    { label: 'Creative CV', href: '/cv/index.html', icon: 'document' },
     {
       label: 'Resume PDF',
-      href: 'https://media.journoportfolio.com/users/413008/uploads/935497f9-de02-4171-a069-57d961a23c8e.pdf',
+      href: '/cv/Vinayak_Arora_Creative_CV.pdf',
       icon: 'document',
     },
   ]
@@ -1390,12 +1430,10 @@ function App() {
     return (
       <main className="hero-scene-preview" aria-label="3D music scene preview">
         <HeroScene
-          audioDataRef={heroAudioDataRef}
-          audioReactiveEnabled={false}
-          interactionSoundEnabled
+          soundEnabled={soundEnabled} dark={themeMode === 'dark'}
         />
         <p className="hero-scene-instructions">
-          Drag the record to scratch · Tap pads to change the beat · Click the record to play or pause
+          Touch the pixels to reveal the studio
         </p>
       </main>
     )
@@ -1590,24 +1628,12 @@ function App() {
 
         <div className="content-column">
       <main>
-        <section className="hero-section hero-section-with-bg" id="top">
-          <div className="hero-entity-background" aria-hidden="true">
-            <HeroScene
-              audioDataRef={heroAudioDataRef}
-              audioReactiveEnabled={false}
-              interactionSoundEnabled={soundEnabled}
-            />
-          </div>
-          <div className="hero-entity-scrim" aria-hidden="true" />
-
-          <div className="hero-copy hero-copy--foreground">
+        <section className="hero-section hero-section--pixels" id="top">
+          <HeroScene soundEnabled={soundEnabled} dark={themeMode === 'dark'} />
+          <div className="pixel-hero-copy">
             <p className="eyebrow">Composer, producer, sound designer</p>
-            <h1>Music, sound, teaching, and interactive audio in one cinematic space.</h1>
-            <p className="hero-text">
-              Vinayak Arora works across music production, sound design, teaching, and game audio.
-              The portfolio brings together original releases, visual-media work, student
-              performances, and interactive audio projects in one place.
-            </p>
+            <h1><span>Vinayak</span>{' '}<span>Arora</span></h1>
+            <p>Music, sound, teaching, and interactive audio. Original work, shared discoveries, and a studio you can play.</p>
 
             <div className="hero-actions">
               <a className="primary-button" href="#featured" onClick={handleActionClick} {...attachHover(2)}>
@@ -1618,12 +1644,12 @@ function App() {
               </a>
             </div>
           </div>
+
         </section>
 
         <section className="featured-section" id="featured">
           <div className="section-heading">
             <p className="eyebrow">Featured work</p>
-            <h2>Explore major bodies of work in one place.</h2>
           </div>
 
           <div className="filter-bar" role="tablist" aria-label="Portfolio sections">
@@ -2032,4 +2058,14 @@ function App() {
   )
 }
 
-export default App
+export default function App() {
+  const view = new URLSearchParams(window.location.search).get('view')
+  return (
+    <>
+      <DiscCursor />
+      {view === 'studio' ? (
+        <Suspense fallback={<main style={{ padding: '3rem' }}>Opening the studio…</main>}><Studio /></Suspense>
+      ) : <PortfolioApp />}
+    </>
+  )
+}
