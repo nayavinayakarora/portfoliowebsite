@@ -441,8 +441,13 @@ export default function Studio() {
       <Scope engineRef={engineRef} grainStateRef={settingsRef} running={isGrains} />
 
       <div className="studio-racks">
+      <section className="studio-keyboard-module" aria-label="Playable synth keyboard">
+        <div className="studio-keyboard-top"><span>Play with touch, mouse, or A W S E D F T G Y H U J K</span><div><button aria-label="Lower octave" disabled={octave <= -2} onClick={() => setOctave(octave - 1)}>−</button><span>Octave {4 + octave}</span><button aria-label="Raise octave" disabled={octave >= 1} onClick={() => setOctave(octave + 1)}>+</button></div></div>
+        <div className="studio-keyboard">{KEYBOARD.map(([name, midi, letter]) => { const note = midi + octave * 12; return <button key={midi} className={`studio-key ${name.includes('#') ? 'black' : 'white'}${activeNotes.includes(note) ? ' held' : ''}`} aria-label={`Play ${name}${4 + octave + (midi === 72 ? 1 : 0)}`} aria-pressed={activeNotes.includes(note)} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); noteOn(note) }} onPointerUp={() => noteOff(note)} onPointerCancel={() => noteOff(note)} onLostPointerCapture={() => noteOff(note)} onKeyDown={(event) => { if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) { event.preventDefault(); noteOn(note) } }} onKeyUp={(event) => { if (event.key === ' ' || event.key === 'Enter') noteOff(note) }} onBlur={() => noteOff(note)}><span>{letter}</span><small>{name}</small></button> })}</div>
+      </section>
+
         <section className="studio-rack studio-synth" aria-labelledby="synth-title">
-          <div className="studio-rack-heading"><span className="studio-module-number">01</span><div><p>Synthesis</p><h2 id="synth-title">Two oscillators. One voice.</h2></div><span className="studio-led" data-on={activeNotes.length > 0 || isSequence} /></div>
+          <div className="studio-rack-heading"><div><p>Synthesis</p><h2 id="synth-title">Two oscillators. One voice.</h2></div><span className="studio-led" data-on={activeNotes.length > 0 || isSequence} /></div>
           <div className="studio-patches" aria-label="Synth patches">{Object.keys(PATCHES).map((name) => <button key={name} onClick={() => applyPatch(name)}>{name}</button>)}<button className="studio-randomise" aria-label="Randomise synth" onClick={() => randomiseInstrument('synth')}>Randomise</button></div>
           <div className="studio-waveforms" aria-label="Oscillator waveform">{[['sine', 'Sine'], ['triangle', 'Triangle'], ['sawtooth', 'Saw'], ['square', 'Square']].map(([value, label]) => <button key={value} aria-pressed={controls.waveform === value} onClick={() => change('waveform', value)}>{label}</button>)}</div>
           <div className="studio-synth-actions"><button aria-pressed={isSequence} onClick={toggleSequence}>{isSequence ? 'Stop sequence' : 'Play sequence'}</button><button onClick={() => safely(() => getEngine().playChord([60, 64, 67, 71]))}>Cmaj7</button><button onClick={() => safely(() => getEngine().playChord([57, 60, 64, 67]))}>Am7</button><a className="studio-sequence-link" href="#sequence-editor">Edit sequence ↓</a></div>
@@ -456,26 +461,8 @@ export default function Studio() {
           </div>
         </section>
 
-        <section className="studio-rack studio-granular" aria-labelledby="grains-title">
-          <div className="studio-rack-heading"><span className="studio-module-number">02</span><div><p>Granular sampling</p><h2 id="grains-title">Find a sound inside a sound.</h2></div><span className="studio-led" data-on={isGrains} /></div>
-          <div className="studio-sample-select"><label>Sound bank<select value={sampleSrc} onChange={selectSample} disabled={loadingSample}>{!library.length && <option value={INITIAL_SAMPLE}>Sound 001</option>}{sampleSrc === 'imported' && <option value="imported">Imported sound</option>}{library.map((entry) => <option key={entry.src} value={entry.src}>{entry.label}</option>)}</select></label><label className="studio-import">Import audio<input type="file" accept="audio/*" onChange={importSample} disabled={loadingSample} /></label></div>
-          <div className="studio-sample-display"><div className="studio-sample-name"><span>{loadingSample ? 'Loading sample…' : sampleName}</span><span>{sampleData ? `${sampleData.duration.toFixed(1)} s` : 'Load on play'}</span></div><div className="studio-sample-wave" aria-hidden="true">{(sampleData?.peaks || Array.from({ length: 160 }, () => 0.08)).map((peak, index) => <span key={index} style={{ height: `${Math.max(4, peak * 100)}%` }} />)}<i style={{ left: `${controls.position * 100}%` }} /></div></div>
-          <div className="studio-synth-actions"><button className="studio-primary" disabled={loadingSample} aria-pressed={isGrains} onClick={toggleGrains}>{loadingSample ? 'Loading…' : isGrains ? 'Stop grains' : 'Start grains'}</button><button disabled={loadingSample} onClick={async () => { const engine = sampleData ? getEngine() : await loadSample(); if (engine) { await engine.resume(); engine.playPreview() } }}>Play original</button><button aria-pressed={controls.reverse} onClick={() => change('reverse', !controls.reverse)}>Reverse</button></div>
-          <div className="studio-patches studio-grain-patches" aria-label="Grain textures">{Object.keys(GRAIN_PATCHES).map((name) => <button key={name} onClick={() => applyGrainPatch(name)}>{name}</button>)}<button className="studio-randomise" aria-label="Randomise grains" onClick={() => randomiseInstrument('grains')}>Randomise</button></div>
-          <div className="studio-controls">
-            <Control name="Position" min={0} max={1} value={controls.position} display={`${Math.round(controls.position * 100)}%`} onChange={(value) => change('position', value)} />
-            <Control name="Grain size" min={0.006} max={0.4} step={0.001} value={controls.grainSize} display={`${Math.round(controls.grainSize * 1000)} ms`} onChange={(value) => change('grainSize', value)} />
-            <Control name="Density" min={2} max={60} value={controls.density} step={1} display={`${controls.density}/s`} onChange={(value) => change('density', value)} />
-            <Control name="Spray" min={0} max={0.4} value={controls.spray} display={`${Math.round(controls.spray * 100)}%`} onChange={(value) => change('spray', value)} />
-            <Control name="Pitch" min={-24} max={24} value={controls.pitch} step={1} display={`${controls.pitch > 0 ? '+' : ''}${controls.pitch} st`} onChange={(value) => change('pitch', value)} />
-            <Control name="Sample level" min={0} max={1} value={controls.grainLevel} display={`${Math.round(controls.grainLevel * 100)}%`} onChange={(value) => change('grainLevel', value)} />
-            <Control name="Texture" min={0} max={1} value={controls.texture} display={`${Math.round(controls.texture * 100)}%`} onChange={(value) => change('texture', value)} />
-          </div>
-        </section>
-      </div>
-
       <section className="studio-sequence-editor studio-rack" id="sequence-editor" aria-labelledby="sequence-title">
-        <div className="studio-rack-heading"><span className="studio-module-number">03</span><div><p>Step sequencer</p><h2 id="sequence-title">Write your own phrase.</h2></div><div className="studio-sequence-actions"><button className="studio-randomise" aria-label="Randomise sequence" onClick={randomisePhrase}>Randomise</button><button aria-pressed={isSequence} onClick={toggleSequence}>{isSequence ? 'Stop phrase' : 'Play phrase'}</button></div></div>
+        <div className="studio-rack-heading"><div><p>Step sequencer</p><h2 id="sequence-title">Write your own phrase.</h2></div><div className="studio-sequence-actions"><button className="studio-randomise" aria-label="Randomise sequence" onClick={randomisePhrase}>Randomise</button><button aria-pressed={isSequence} onClick={toggleSequence}>{isSequence ? 'Stop phrase' : 'Play phrase'}</button></div></div>
         <div className="studio-sequence-settings">
           <label>Starting pattern<select aria-label="Starting pattern" value={sequencePattern} onChange={(event) => choosePattern(event.target.value)}>{sequencePattern === 'Custom' && <option value="Custom">Custom</option>}{Object.keys(SEQUENCE_PATTERNS).map((name) => <option key={name}>{name}</option>)}</select></label>
           <label>Key<select aria-label="Sequence key" value={sequenceRoot} onChange={(event) => setSequenceRoot(Number(event.target.value))}>{NOTE_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}</select></label>
@@ -484,6 +471,7 @@ export default function Studio() {
           <label>Octave<select aria-label="Sequence octave" value={sequence.octave ?? 0} onChange={(event) => changeSequence({ octave: Number(event.target.value) })}>{[-2, -1, 0, 1, 2].map((shift) => <option key={shift} value={shift}>{shift === 0 ? 'Original' : `${shift > 0 ? '+' : ''}${shift} octave${Math.abs(shift) === 2 ? 's' : ''}`}</option>)}</select></label>
           <button onClick={() => choosePattern(sequencePattern === 'Custom' ? 'Night drive' : sequencePattern)}>Generate</button>
           <button onClick={() => { changeSequence({ notes: sequence.notes.map(() => null) }); setSequencePattern('Custom') }}>Clear</button>
+
         </div>
         <div className="studio-sequence-timing">
           <label>Tempo <output>{sequence.bpm} BPM</output><input aria-label="Sequence tempo" type="range" min="50" max="180" step="1" value={sequence.bpm} onChange={(event) => changeSequence({ bpm: Number(event.target.value) })} /></label>
@@ -499,10 +487,25 @@ export default function Studio() {
         <p className="studio-sequence-help">Edit any note or choose Rest. Octave shifts the whole phrase; displayed notes show what you hear. Key and scale guide Generate and Randomise; length changes keep your existing steps.</p>
       </section>
 
-      <section className="studio-keyboard-module" aria-label="Playable synth keyboard">
-        <div className="studio-keyboard-top"><span>Play with touch, mouse, or A W S E D F T G Y H U J K</span><div><button aria-label="Lower octave" disabled={octave <= -2} onClick={() => setOctave(octave - 1)}>−</button><span>Octave {4 + octave}</span><button aria-label="Raise octave" disabled={octave >= 1} onClick={() => setOctave(octave + 1)}>+</button></div></div>
-        <div className="studio-keyboard">{KEYBOARD.map(([name, midi, letter]) => { const note = midi + octave * 12; return <button key={midi} className={`studio-key ${name.includes('#') ? 'black' : 'white'}${activeNotes.includes(note) ? ' held' : ''}`} aria-label={`Play ${name}${4 + octave + (midi === 72 ? 1 : 0)}`} aria-pressed={activeNotes.includes(note)} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); noteOn(note) }} onPointerUp={() => noteOff(note)} onPointerCancel={() => noteOff(note)} onLostPointerCapture={() => noteOff(note)} onKeyDown={(event) => { if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) { event.preventDefault(); noteOn(note) } }} onKeyUp={(event) => { if (event.key === ' ' || event.key === 'Enter') noteOff(note) }} onBlur={() => noteOff(note)}><span>{letter}</span><small>{name}</small></button> })}</div>
-      </section>
+
+        <section className="studio-rack studio-granular" aria-labelledby="grains-title">
+          <div className="studio-rack-heading"><div><p>Granular sampling</p><h2 id="grains-title">Find a sound inside a sound.</h2></div><span className="studio-led" data-on={isGrains} /></div>
+          <p className="studio-sample-credit">The built-in sound bank contains original samples created, synthesised, and recorded by <strong>Vinayak Arora</strong>. If you use these samples in your work, please credit Vinayak Arora.</p>
+          <div className="studio-sample-select"><label>Sound bank<select value={sampleSrc} onChange={selectSample} disabled={loadingSample}>{!library.length && <option value={INITIAL_SAMPLE}>Sound 001</option>}{sampleSrc === 'imported' && <option value="imported">Imported sound</option>}{library.map((entry) => <option key={entry.src} value={entry.src}>{entry.label}</option>)}</select></label><label className="studio-import">Import audio<input type="file" accept="audio/*" onChange={importSample} disabled={loadingSample} /></label></div>
+          <div className="studio-sample-display"><div className="studio-sample-name"><span>{loadingSample ? 'Loading sample…' : sampleName}</span><span>{sampleData ? `${sampleData.duration.toFixed(1)} s` : 'Load on play'}</span></div><div className="studio-sample-wave" aria-hidden="true">{(sampleData?.peaks || Array.from({ length: 160 }, () => 0.08)).map((peak, index) => <span key={index} style={{ height: `${Math.max(4, peak * 100)}%` }} />)}<i style={{ left: `${controls.position * 100}%` }} /></div></div>
+          <div className="studio-synth-actions"><button className="studio-primary" disabled={loadingSample} aria-pressed={isGrains} onClick={toggleGrains}>{loadingSample ? 'Loading…' : isGrains ? 'Stop grains' : 'Start grains'}</button><button disabled={loadingSample} onClick={async () => { const engine = sampleData ? getEngine() : await loadSample(); if (engine) { await engine.resume(); engine.playPreview() } }}>Play original</button><button aria-pressed={controls.reverse} onClick={() => change('reverse', !controls.reverse)}>Reverse</button></div>
+          <div className="studio-patches studio-grain-patches" aria-label="Grain textures">{Object.keys(GRAIN_PATCHES).map((name) => <button key={name} onClick={() => applyGrainPatch(name)}>{name}</button>)}<button className="studio-randomise" aria-label="Randomise grains" onClick={() => randomiseInstrument('grains')}>Randomise</button></div>
+          <div className="studio-controls">
+            <Control name="Position" min={0} max={1} value={controls.position} display={`${Math.round(controls.position * 100)}%`} onChange={(value) => change('position', value)} />
+            <Control name="Grain size" min={0.006} max={0.4} step={0.001} value={controls.grainSize} display={`${Math.round(controls.grainSize * 1000)} ms`} onChange={(value) => change('grainSize', value)} />
+            <Control name="Density" min={2} max={60} value={controls.density} step={1} display={`${controls.density}/s`} onChange={(value) => change('density', value)} />
+            <Control name="Spray" min={0} max={0.4} value={controls.spray} display={`${Math.round(controls.spray * 100)}%`} onChange={(value) => change('spray', value)} />
+            <Control name="Pitch" min={-24} max={24} value={controls.pitch} step={1} display={`${controls.pitch > 0 ? '+' : ''}${controls.pitch} st`} onChange={(value) => change('pitch', value)} />
+            <Control name="Sample level" min={0} max={1} value={controls.grainLevel} display={`${Math.round(controls.grainLevel * 100)}%`} onChange={(value) => change('grainLevel', value)} />
+            <Control name="Texture" min={0} max={1} value={controls.texture} display={`${Math.round(controls.texture * 100)}%`} onChange={(value) => change('texture', value)} />
+          </div>
+        </section>
+      </div>
 
       <section className="studio-output" aria-label="Recording">
         <div className="studio-recorder"><div><span className="studio-kicker">Capture your experiment</span><span className="studio-time">{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</span></div><button className={`studio-record${recording ? ' recording' : ''}`} disabled={!recordAvailable} onClick={toggleRecording}><i />{recording ? 'Finish take' : 'Record take'}</button><p>{recordAvailable ? 'Records the instruments, samples, and effects in this studio.' : 'Recording is unavailable in this browser.'}</p></div>

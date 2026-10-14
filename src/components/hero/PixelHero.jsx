@@ -4,6 +4,7 @@ import { PORTAL_PIXELS, pixelLayout } from './pixelPortrait'
 import { drawPixelWorld, portalVisible, recordHandScratch, studioPixelOpacity } from './pixelWorld'
 import { createPixelCharacter, SPRITE_SIZE } from './pixelCharacter'
 import { createPixelPet, pixelPetLayout, drawPixelPets } from './pixelPets'
+import { drawShoeGreeting, shoeGreetingLayout, touchingShoeGreeting } from './pixelEasterEgg'
 
 const FIXED_PARTS = new Set(['console', 'record-left', 'record-right', 'mixer', 'meter', 'guitar', 'tabla', 'synth', 'patch-cable'])
 
@@ -63,6 +64,9 @@ export function HeroScene({ soundEnabled = true, dark = false }) {
       runtime.layout = layout; runtime.pixels = pixels
       const instructions = shellRef.current.querySelector('.pixel-hero-instructions').getBoundingClientRect()
       petsLayout = pixelPetLayout(width, height, layout, instructions.right - bounds.left)
+      for (const sprite of Object.values(pets)) for (const pixel of sprite) {
+        pixel.dx = 0; pixel.dy = 0; pixel.vx = 0; pixel.vy = 0
+      }
       pixels.forEach((pixel) => { pixel.x = layout.left + pixel.u * layout.size; pixel.y = layout.top + pixel.v * layout.size })
       runtime.portal = { x: layout.left + layout.size * (width < 760 ? 0.32 : 0.35), y: layout.top + layout.size * (width < 760 ? 0.64 : 0.71), width: layout.size * 0.38 }
       shellRef.current.style.setProperty('--portal-left', `${runtime.portal.x}px`)
@@ -100,6 +104,9 @@ export function HeroScene({ soundEnabled = true, dark = false }) {
       }
       const exposureTarget = portalVisible(interactionRef.current, now) ? 1 : 0
       runtime.portalExposure = runtime.reduced ? exposureTarget : runtime.portalExposure + (exposureTarget - runtime.portalExposure) * (1 - 0.82 ** dt)
+      const shoe = shoeGreetingLayout(layout, runtime.scroll, time)
+      // Always present underneath: the shoe pixels naturally cover and uncover the secret.
+      drawShoeGreeting(ctx, shoe, darkRef.current)
       let touched = 0
       let closest = null
       let nearest = radius * radius
@@ -144,7 +151,9 @@ export function HeroScene({ soundEnabled = true, dark = false }) {
         ctx.fillRect(pixel.renderX, pixel.renderY, Math.ceil(unit), Math.ceil(unit))
       }
       ctx.globalAlpha = 1
-      drawPixelPets(ctx, pets, petsLayout, time, runtime.reduced, darkRef.current)
+      const petHit = drawPixelPets(ctx, pets, petsLayout, time, runtime.reduced, darkRef.current, { pointer, dt })
+      touched += petHit.touched
+      if (petHit.closest && petHit.distanceSquared < nearest) closest = petHit.closest
       runtime.kick *= 0.9 ** dt
       if (touched > 4) {
         if (pointer.active && now - pointer.movedAt < 150) interactionRef.current.lastAt = pointer.movedAt
@@ -175,7 +184,11 @@ export function HeroScene({ soundEnabled = true, dark = false }) {
     else interactionRef.current.touch = true
     interactionRef.current.lastAt = performance.now()
     reveal()
-    if (runtimeRef.current) runtimeRef.current.kick = 1
+    const runtime = runtimeRef.current
+    if (runtime?.layout) {
+      const shoe = shoeGreetingLayout(runtime.layout, runtime.scroll, runtime.reduced ? 0 : performance.now() / 1000)
+      runtime.kick = touchingShoeGreeting(runtime.pointer, shoe) ? 0 : 1
+    }
     if (!soundEnabled) return
     if (!audioRef.current) audioRef.current = new PixelHeroAudio()
     audioRef.current.setEnabled(soundEnabled)

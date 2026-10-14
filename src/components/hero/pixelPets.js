@@ -44,20 +44,24 @@ export function createPixelPet(kind) {
     layer('paws')
     rect(8, 28, 6, 6, c.ink); rect(9, 28, 4, 5, c.white); rect(7, 33, 8, 2, c.ink); rect(8, 33, 6, 1, c.white)
     rect(24, 27, 5, 7, c.ink); rect(25, 27, 3, 6, c.white); rect(24, 33, 7, 2, c.ink); rect(25, 33, 5, 1, c.white)
+    // The far ear sits behind the face rather than covering the eye and nose.
+    layer('ears')
+    polygon([[37,6],[40,8],[41,15],[39,19],[37,17],[36,9]], c.ink)
+    rect(38, 9, 2, 7, c.brown)
     layer('head')
     ellipse(30, 11, 10, 10, c.ink); ellipse(30, 11, 8, 8, c.tan)
     polygon([[27,4],[31,3],[34,8],[33,15],[27,17],[28,10]], c.white)
     ellipse(34, 16, 8, 5, c.ink); ellipse(34, 16, 7, 4, c.white)
     rect(38, 13, 4, 3, c.black); rect(38, 13, 1, 1, c.shade)
-    rect(25, 10, 2, 3, c.black); rect(34, 9, 2, 3, c.black)
-    rect(25, 10, 1, 1, c.white); rect(34, 9, 1, 1, c.white)
+    ellipse(28, 10, 3, 3, c.tanLight); ellipse(34, 10, 2, 3, c.tanLight)
+    rect(30, 8, 2, 6, c.white)
+    rect(28, 10, 2, 2, c.black); rect(34, 10, 2, 2, c.black)
+    rect(28, 10, 1, 1, c.white); rect(34, 10, 1, 1, c.white)
     rect(33, 19, 4, 1, c.brown); rect(34, 20, 2, 2, c.pink)
     layer('ears')
     polygon([[23,5],[19,9],[20,18],[23,22],[26,20],[27,10]], c.ink)
     polygon([[23,7],[21,10],[22,18],[24,20],[25,18],[25,10]], c.brown)
     rect(22, 10, 1, 6, c.tan)
-    polygon([[37,6],[40,8],[41,15],[39,19],[37,17],[36,9]], c.ink)
-    rect(38, 9, 2, 7, c.brown)
   } else {
     // The reference cat has a bobtail: only a three-by-three-pixel stump.
     layer('tail')
@@ -85,12 +89,29 @@ export function createPixelPet(kind) {
     rect(11, 17, 2, 1, c.pink); rect(11, 18, 1, 2, c.stripe)
     rect(5, 18, 3, 1, c.shade); rect(16, 18, 3, 1, c.shade)
   }
-  return layers.flatMap(layerCells => layerCells.flatMap((cell, index) => cell ? [{ ...cell, x: index % PET_WIDTH, y: Math.floor(index / PET_WIDTH) }] : []))
+  const shades = { frame: '#15191c', lens: '#343b40', reflection: '#91958b' }
+  layer('shades')
+  if (kind === 'beagle') {
+    for (const x of [26, 33]) {
+      rect(x, 9, 5, 3, shades.frame); rect(x + 1, 12, 3, 1, shades.frame)
+      rect(x + 1, 10, 3, 2, shades.lens); rect(x + 1, 10, 1, 1, shades.reflection)
+    }
+    rect(31, 10, 2, 1, shades.frame)
+    rect(23, 9, 3, 1, shades.frame); rect(38, 9, 2, 1, shades.frame)
+  } else {
+    for (const x of [5, 13]) {
+      polygon([[x,12],[x+5,12],[x+5,15],[x+4,17],[x+1,17],[x,15]], shades.frame)
+      rect(x + 1, 13, 3, 3, shades.lens); rect(x + 1, 13, 1, 1, shades.reflection)
+    }
+    rect(10, 13, 3, 1, shades.frame)
+    rect(3, 12, 2, 1, shades.frame); rect(18, 12, 3, 1, shades.frame)
+  }
+  return layers.flatMap(layerCells => layerCells.flatMap((cell, index) => cell ? [{ ...cell, x: index % PET_WIDTH, y: Math.floor(index / PET_WIDTH), dx: 0, dy: 0, vx: 0, vy: 0 }] : []))
 }
 
 export function pixelPetLayout(width, height, character, instructionRight = width * 0.24) {
   const mobile = width < 760
-  let unit = mobile ? Math.min(1.6, width / 250) : Math.min(3.1, width / 500)
+  let unit = mobile ? Math.min(1.7, width / 235) : Math.min(3.5, width / 435)
   const gap = mobile ? 12 : 16
   const portalLeft = character.left + character.size * 0.35
   if (!mobile) unit = Math.min(unit, Math.max(0.9, (portalLeft - instructionRight - gap - 28) / (PET_WIDTH * 2)))
@@ -103,23 +124,56 @@ export function pixelPetLayout(width, height, character, instructionRight = widt
 export function pixelPetMotion(part, time, unit, reduced = false) {
   if (reduced || part.endsWith('paws')) return { x: 0, y: 0 }
   const phase = part.startsWith('cat-') ? 0.7 : 0
-  const bob = -Math.max(0, Math.sin(time * 3.4 + phase)) * unit * 0.55
+  const beat = time * 3.4 + phase
+  const bob = -Math.max(0, Math.sin(beat)) * unit * 0.45
   if (part === 'beagle-tail') return { x: Math.sin(time * 5) * unit, y: bob }
   if (part === 'cat-tail') return { x: Math.sin(time * 3.4) * unit * 0.12, y: bob }
-  const head = part.endsWith('head') || part.endsWith('ears')
-  return { x: part.endsWith('ears') ? Math.sin(time * 3.4) * unit * 0.35 : 0, y: bob + (head ? Math.sin(time * 3.4 + phase + 0.4) * unit * 0.9 : 0) }
+  const head = part.endsWith('head') || part.endsWith('ears') || part.endsWith('shades')
+  const nod = head ? (1 - Math.cos(beat)) * unit * 0.9 : 0
+  return { x: (head ? Math.sin(beat) * unit * 0.5 : 0) + (part.endsWith('ears') ? Math.sin(beat) * unit * 0.2 : 0), y: bob + nod }
 }
 
-export function drawPixelPets(ctx, sprites, layout, time, reduced, dark) {
+export function drawPixelPets(ctx, sprites, layout, time, reduced, dark, interaction = {}) {
   const unit = layout.unit
+  const { pointer, dt = 1 } = interaction
+  const radius = Math.max(22, unit * 15)
+  const hit = { touched: 0, closest: null, distanceSquared: radius * radius }
   for (const [kind, left] of [['beagle', layout.left], ['cat', layout.catLeft]]) {
     ctx.fillStyle = dark ? '#29231c' : '#c1a071'
     ctx.fillRect(Math.round(left + unit * 5), Math.round(layout.base), Math.round(unit * 32), Math.max(2, Math.round(unit)))
     const motion = {}
     for (const pixel of sprites[kind]) {
       const offset = motion[pixel.part] ??= pixelPetMotion(pixel.part, time, unit, reduced)
+      const x = left + pixel.x * unit + offset.x
+      const y = layout.top + pixel.y * unit + offset.y
+      const deltaX = x + pixel.dx - (pointer?.x ?? -1000)
+      const deltaY = y + pixel.dy - (pointer?.y ?? -1000)
+      const distanceSquared = deltaX * deltaX + deltaY * deltaY
+      let targetX = 0, targetY = 0
+      if (pointer?.active && distanceSquared < radius * radius) {
+        hit.touched += 1
+        if (distanceSquared < hit.distanceSquared) {
+          hit.distanceSquared = distanceSquared
+          hit.closest = { u: pixel.x / PET_WIDTH, v: pixel.y / PET_HEIGHT, part: pixel.part }
+        }
+        if (!reduced) {
+          const distance = Math.sqrt(distanceSquared)
+          const force = (1 - distance / radius) * unit * 7
+          targetX = deltaX / Math.max(3, distance) * force
+          targetY = deltaY / Math.max(3, distance) * force
+        }
+      }
+      if (reduced) {
+        pixel.dx = 0; pixel.dy = 0; pixel.vx = 0; pixel.vy = 0
+      } else {
+        // Share the hero's spring response, scaled down to keep the small pets recognizable.
+        pixel.vx = (pixel.vx + (targetX - pixel.dx) * 0.065 * dt) * 0.72 ** dt
+        pixel.vy = (pixel.vy + (targetY - pixel.dy) * 0.065 * dt) * 0.72 ** dt
+        pixel.dx += pixel.vx * dt; pixel.dy += pixel.vy * dt
+      }
       ctx.fillStyle = pixel.colour
-      ctx.fillRect(Math.round(left + pixel.x * unit + offset.x), Math.round(layout.top + pixel.y * unit + offset.y), Math.ceil(unit), Math.ceil(unit))
+      ctx.fillRect(Math.round(x + pixel.dx), Math.round(y + pixel.dy), Math.ceil(unit), Math.ceil(unit))
     }
   }
+  return hit
 }

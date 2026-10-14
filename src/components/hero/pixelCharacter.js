@@ -105,7 +105,10 @@ export function createPixelCharacter() {
 
   part = 'body'
   rect(53, 103, 13, 22, c.ink); rect(72, 103, 13, 22, c.ink)
-  rect(51, 124, 16, 3, c.hair); rect(72, 124, 17, 3, c.hair)
+  rect(51, 124, 16, 3, c.hair)
+  part = 'shoe-right'
+  rect(72, 124, 17, 3, c.hair)
+  part = 'body'
   rect(60, 49, 14, 14, c.skinShade); rect(63, 50, 11, 10, c.skin)
   polygon([[57,56],[76,56],[83,65],[79,100],[51,100],[50,68]], c.ink)
   polygon([[57,59],[75,59],[79,67],[76,100],[54,100],[54,69]], c.shirt)
