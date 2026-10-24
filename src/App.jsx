@@ -372,20 +372,13 @@ const listeningRoom = {
 const eotd = {
   title: 'EOTD - A Daily Moment of Music',
   intro:
-    'For over four years, I have maintained a personal musical discipline called EOTD (End Of The Day) - a daily ritual where I go live on Instagram and share a spontaneous moment of music. What started as a simple consistency challenge evolved into a long-term artistic documentation of growth, experimentation, and musical storytelling.',
+    'EOTD stands for End Of The Day. For over four years, I\'ve been going live on Instagram to play music. It\'s also an excuse to spend time with my instruments, mostly my piano.',
   body: [
-    'Every session is different. Some days focus on vocal harmony, some on arrangement ideas, some on improvisation, sound design, or re-imagined versions of songs. The idea is simple: show up every day, create something honest, and let consistency shape artistry.',
-    'This practice reflects my belief that musicianship is not just about big releases or performances, but about daily engagement with sound - treating music like a living, breathing practice rather than an occasional outcome.',
-  ],
-  highlights: [
-    'A documentation of musical evolution',
-    'A laboratory for testing ideas',
-    'A discipline in creative consistency',
-    'A way to stay connected with listeners in real time',
-    'A personal archive of over 1000+ days of music',
+    'Some days I try a song differently, work out harmonies, or play around with an arrangement. Other days I just improvise and see where it goes.',
+    'There are over 1,000 days of music in the archive now. Looking back through the sessions, I can hear how my playing and ideas have changed.',
   ],
   outro:
-    'I document these sessions on YouTube and Instagram as part of an ongoing creative journal.',
+    'I keep recordings on YouTube and Instagram. You can watch a few below, or join me live on Instagram.',
   links: [
     { label: 'Watch on YouTube', href: 'https://www.youtube.com/@vinayakaroraeotd' },
     { label: 'Join on Instagram', href: 'https://www.instagram.com/vinayak.arora/' },
@@ -1823,7 +1816,7 @@ function PortfolioApp() {
                 <span className="panel-label">EOTD</span>
                 <strong>{eotd.title}</strong>
                 <span>
-                  A long-running daily practice of live music, experimentation, and creative consistency.
+                  Songs, ideas, and time at the piano. Live on Instagram.
                 </span>
               </span>
               <span className="eotd-toggle-indicator">{isEotdOpen ? 'Close' : 'Open'}</span>
@@ -1839,36 +1832,25 @@ function PortfolioApp() {
                   <p>{eotd.outro}</p>
                 </div>
 
-                <div className="eotd-details">
-                  <div className="eotd-list">
-                    <p className="collection-eyebrow">What EOTD has become</p>
-                    <ul>
-                      {eotd.highlights.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="support-link-grid eotd-links">
-                    {eotd.links.map((link) => (
-                      <a
-                        key={link.label}
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={handleActionClick}
-                      >
-                        {link.label}
-                      </a>
-                    ))}
-                  </div>
+                <div className="support-link-grid eotd-links">
+                  {eotd.links.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={handleActionClick}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
                 </div>
 
                 <div className="eotd-archive">
                   <div className="collection-copy">
-                    <p className="collection-eyebrow">Documented sessions</p>
-                    <h3>EOTD session archive</h3>
-                    <p>A selection from the long-running daily music journal, playable right here.</p>
+                    <p className="collection-eyebrow">From the archive</p>
+                    <h3>EOTD sessions</h3>
+                    <p>Pick a session below to listen.</p>
                   </div>
 
                   <div className="eotd-player">
