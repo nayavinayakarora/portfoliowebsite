@@ -1378,6 +1378,29 @@ main,
   width: 100%;
 }
 
+.mini-game-volume {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  position: relative;
+  z-index: 1;
+}
+
+.mini-game-volume input {
+  flex: 1;
+  min-width: 0;
+  max-width: 12rem;
+  min-height: 2rem;
+  accent-color: var(--accent-cyan);
+}
+
+.mini-game-volume output {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+}
+
 .pitch-game-panel,
 .pitch-result-card,
 .pitch-step,

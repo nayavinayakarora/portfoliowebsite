@@ -159,7 +159,7 @@ const featuredCollections = [
         title: 'Fuzzy Cuddly Scrampadoodlicious',
         date: 'January 10, 2023',
         role: 'Original release',
-        blurb: 'An official YouTube Topic release from your original catalog.',
+        blurb: 'An original release by Vinayak Arora, available on YouTube.',
         href: 'https://www.youtube.com/watch?v=I9PoD2GzJ-Q&ab_channel=VinayakArora-Topic',
         image:
           'https://media.journoportfolio.com/users/413008/images/63b481c8-bfca-43f1-9c0d-cc0c9ff0a667_max-600.jpg',
@@ -272,7 +272,7 @@ const featuredCollections = [
         title: 'Kriti Sethia covers Easy on Me',
         date: 'October 15, 2022',
         role: 'Fall recital 2022',
-        blurb: 'A 13-year-old student performance produced, shot, recorded, and mixed through your studio ecosystem.',
+        blurb: 'A performance by a 13-year-old student, produced, filmed, recorded, and mixed at TeevraMa Studio.',
         href: 'https://youtu.be/MQY2nrHHRk0',
         image:
           'https://media.journoportfolio.com/users/413008/images/ac9d59b2-d0fc-4486-a5b5-bdf2c74cd6bb_max-600.jpg',

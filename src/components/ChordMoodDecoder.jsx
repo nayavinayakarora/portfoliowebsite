@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createMiniGameAudio, GAME_AUDIO_LEVEL, midiNoteName } from '../miniGameAudio'
 
 const ROOTS = [
   { name: 'C', midi: 48 },
@@ -35,51 +36,14 @@ const MODES = {
   },
 }
 
-function midiToFrequency(midi) {
-  return 440 * (2 ** ((midi - 69) / 12))
-}
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms))
-}
-
 function randomFrom(list) {
   return list[Math.floor(Math.random() * list.length)]
 }
 
-function createImpulseResponse(context, duration = 1.4, decay = 2.4) {
-  const sampleRate = context.sampleRate
-  const length = Math.max(1, Math.floor(sampleRate * duration))
-  const impulse = context.createBuffer(2, length, sampleRate)
-
-  for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
-    const data = impulse.getChannelData(channel)
-    for (let index = 0; index < length; index += 1) {
-      const envelope = Math.pow(1 - (index / length), decay)
-      data[index] = ((Math.random() * 2) - 1) * envelope
-    }
-  }
-
-  return impulse
-}
-
-function createNoiseBuffer(context, seconds = 0.18) {
-  const length = Math.max(1, Math.floor(context.sampleRate * seconds))
-  const buffer = context.createBuffer(1, length, context.sampleRate)
-  const data = buffer.getChannelData(0)
-
-  for (let index = 0; index < length; index += 1) {
-    data[index] = ((Math.random() * 2) - 1) * 0.55
-  }
-
-  return buffer
-}
-
 export function ChordMoodDecoder() {
-  const audioContextRef = useRef(null)
-  const audioFxRef = useRef(null)
-  const noiseBufferRef = useRef(null)
-  const activeNodesRef = useRef([])
+  const audioRef = useRef(null)
+  const runTokenRef = useRef(0)
+  const busyRef = useRef(false)
   const recentPromptIdsRef = useRef([])
   const [mode, setMode] = useState('easy')
   const [phase, setPhase] = useState('idle')
@@ -87,6 +51,7 @@ export function ChordMoodDecoder() {
   const [reveal, setReveal] = useState(null)
   const [status, setStatus] = useState('Play a chord, then identify what kind of harmony it is.')
   const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [volume, setVolume] = useState(GAME_AUDIO_LEVEL)
   const [prompt, setPrompt] = useState(() => {
     const firstOption = MODES.easy.options[0]
     return {
@@ -101,159 +66,22 @@ export function ChordMoodDecoder() {
 
   useEffect(
     () => () => {
-      activeNodesRef.current.forEach((node) => {
-        try {
-          if (typeof node.stop === 'function') {
-            node.stop()
-          }
-        } catch {}
-        try {
-          node.disconnect()
-        } catch {}
-      })
-      activeNodesRef.current = []
-      audioFxRef.current = null
-      audioContextRef.current?.close().catch(() => {})
-      audioContextRef.current = null
-      noiseBufferRef.current = null
+      runTokenRef.current += 1
+      audioRef.current?.close()
+      audioRef.current = null
     },
     [],
   )
 
-  useEffect(() => {
-    setSelectedOption('')
-    setReveal(null)
-    setPhase('idle')
-    setStatus(`Play a chord, then identify the ${mode === 'easy' ? 'family' : 'exact chord color'}.`)
-  }, [mode])
-
-  function registerNode(node) {
-    activeNodesRef.current.push(node)
-    return node
+  function playChord(notes) {
+    if (!audioRef.current) audioRef.current = createMiniGameAudio()
+    audioRef.current.setLevel(volume)
+    return audioRef.current.play(notes.map((midi) => 440 * (2 ** ((midi - 69) / 12))), { timbre: 'piano', duration: 1.7 })
   }
 
-  async function ensureAudioContext() {
-    if (typeof window === 'undefined') {
-      return null
-    }
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
-    if (!AudioContextClass) {
-      return null
-    }
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContextClass()
-    }
-
-    const context = audioContextRef.current
-    if (context.state === 'suspended') {
-      await context.resume()
-    }
-
-    if (!noiseBufferRef.current) {
-      noiseBufferRef.current = createNoiseBuffer(context)
-    }
-
-    if (!audioFxRef.current) {
-      const master = context.createGain()
-      const pianoBus = context.createGain()
-      const lowpass = context.createBiquadFilter()
-      const convolver = context.createConvolver()
-      const reverbGain = context.createGain()
-      const delay = context.createDelay(0.5)
-      const delayFeedback = context.createGain()
-      const delayGain = context.createGain()
-
-      master.gain.value = 0.34
-      pianoBus.gain.value = 1
-      lowpass.type = 'lowpass'
-      lowpass.frequency.value = 2900
-      lowpass.Q.value = 0.22
-      convolver.buffer = createImpulseResponse(context)
-      reverbGain.gain.value = 0.16
-      delay.delayTime.value = 0.16
-      delayFeedback.gain.value = 0.12
-      delayGain.gain.value = 0.1
-
-      pianoBus.connect(lowpass)
-      lowpass.connect(master)
-      lowpass.connect(convolver)
-      convolver.connect(reverbGain)
-      reverbGain.connect(master)
-      lowpass.connect(delay)
-      delay.connect(delayFeedback)
-      delayFeedback.connect(delay)
-      delay.connect(delayGain)
-      delayGain.connect(master)
-      master.connect(context.destination)
-
-      audioFxRef.current = { pianoBus }
-    }
-
-    return context
-  }
-
-  async function playChord(notes, durationMs = 1350) {
-    const context = await ensureAudioContext()
-    if (!context || !audioFxRef.current || !noiseBufferRef.current) {
-      setStatus('This browser blocked the chord player.')
-      return
-    }
-
-    const now = context.currentTime + 0.015
-    const stopAt = now + (durationMs / 1000)
-
-    notes.forEach((midi, index) => {
-      const frequency = midiToFrequency(midi)
-      const bodyOscillator = registerNode(context.createOscillator())
-      const shimmerOscillator = registerNode(context.createOscillator())
-      const gain = context.createGain()
-      const lowpass = context.createBiquadFilter()
-
-      bodyOscillator.type = 'triangle'
-      shimmerOscillator.type = 'sine'
-      bodyOscillator.frequency.setValueAtTime(frequency, now)
-      shimmerOscillator.frequency.setValueAtTime(frequency * 2, now)
-      shimmerOscillator.detune.setValueAtTime(index % 2 === 0 ? -4 : 4, now)
-
-      lowpass.type = 'lowpass'
-      lowpass.frequency.setValueAtTime(3400, now)
-      lowpass.frequency.exponentialRampToValueAtTime(1800, stopAt)
-      lowpass.Q.value = 0.28
-
-      gain.gain.setValueAtTime(0.0001, now)
-      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.078 : 0.054, now + 0.016)
-      gain.gain.exponentialRampToValueAtTime(0.014, now + 0.18)
-      gain.gain.exponentialRampToValueAtTime(0.0001, stopAt)
-
-      bodyOscillator.connect(lowpass)
-      shimmerOscillator.connect(lowpass)
-      lowpass.connect(gain)
-      gain.connect(audioFxRef.current.pianoBus)
-      bodyOscillator.start(now)
-      shimmerOscillator.start(now)
-      bodyOscillator.stop(stopAt + 0.025)
-      shimmerOscillator.stop(stopAt + 0.025)
-    })
-
-    const attackNoise = registerNode(context.createBufferSource())
-    const attackFilter = context.createBiquadFilter()
-    const attackGain = context.createGain()
-    attackNoise.buffer = noiseBufferRef.current
-    attackFilter.type = 'bandpass'
-    attackFilter.frequency.value = 1800
-    attackFilter.Q.value = 0.7
-    attackGain.gain.setValueAtTime(0.0001, now)
-    attackGain.gain.exponentialRampToValueAtTime(0.017, now + 0.01)
-    attackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08)
-    attackNoise.connect(attackFilter)
-    attackFilter.connect(attackGain)
-    attackGain.connect(audioFxRef.current.pianoBus)
-    attackNoise.start(now)
-    attackNoise.stop(now + 0.09)
-
-    await wait(durationMs + 120)
+  function handleVolume(value) {
+    setVolume(value)
+    audioRef.current?.setLevel(value)
   }
 
   function pickNextPrompt(nextMode) {
@@ -274,31 +102,56 @@ export function ChordMoodDecoder() {
   }
 
   async function handlePlayNewChord(nextMode = mode) {
+    if (busyRef.current) return
+    busyRef.current = true
+    const token = ++runTokenRef.current
     const nextPrompt = pickNextPrompt(nextMode)
     setPrompt(nextPrompt)
     setSelectedOption('')
     setReveal(null)
     setPhase('playing')
     setStatus('Listen closely to the chord color.')
-    await playChord(nextPrompt.notes)
+    try {
+      const finished = await playChord(nextPrompt.notes)
+      if (!finished || token !== runTokenRef.current) return
+    } catch {
+      if (token !== runTokenRef.current) return
+      setPhase('idle')
+      setStatus('Audio could not start. Tap Play chord to try again.')
+      return
+    } finally {
+      if (token === runTokenRef.current) busyRef.current = false
+    }
     setPhase('guessing')
     setStatus(nextMode === 'easy' ? 'Is it major, minor, diminished, or suspended?' : 'Name the exact chord color.')
   }
 
   async function handleReplay() {
-    if (phase === 'playing') {
+    if (busyRef.current || phase === 'idle') {
       return
     }
 
+    busyRef.current = true
+    const token = ++runTokenRef.current
+    const alreadyAnswered = reveal !== null
     setPhase('playing')
     setStatus('One more listen...')
-    await playChord(prompt.notes)
-    setPhase('guessing')
-    setStatus(mode === 'easy' ? 'Is it major, minor, diminished, or suspended?' : 'Name the exact chord color.')
+    try {
+      const finished = await playChord(prompt.notes)
+      if (!finished || token !== runTokenRef.current) return
+      setPhase(alreadyAnswered ? 'revealed' : 'guessing')
+      setStatus(alreadyAnswered ? `That was ${prompt.root.name} ${prompt.answer.label}. Try a new chord when ready.` : mode === 'easy' ? 'Is it major, minor, diminished, or suspended?' : 'Name the exact chord color.')
+    } catch {
+      if (token !== runTokenRef.current) return
+      setPhase(alreadyAnswered ? 'revealed' : 'guessing')
+      setStatus('Audio could not start. Tap Replay chord to try again.')
+    } finally {
+      if (token === runTokenRef.current) busyRef.current = false
+    }
   }
 
   async function handleModeSwitch(nextMode) {
-    if (mode === nextMode) {
+    if (mode === nextMode || busyRef.current) {
       return
     }
 
@@ -321,8 +174,8 @@ export function ChordMoodDecoder() {
     }))
     setStatus(
       isCorrect
-        ? `Correct. That was a ${prompt.root.name} ${prompt.answer.label}.`
-        : `Close, but it was a ${prompt.root.name} ${prompt.answer.label}.`,
+        ? `Correct. That was ${prompt.root.name} ${prompt.answer.label}.`
+        : `Not quite. That was ${prompt.root.name} ${prompt.answer.label}.`,
     )
   }
 
@@ -342,6 +195,12 @@ export function ChordMoodDecoder() {
           </div>
         </div>
 
+        <label className="mini-game-volume">
+          <span>Game volume</span>
+          <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => handleVolume(Number(event.target.value))} aria-label="Chord Decoder volume" />
+          <output>{Math.round(volume * 100)}%</output>
+        </label>
+
         <div className="chord-game-stage">
           <div className="chord-game-mode-switch" role="tablist" aria-label="Chord decoder mode">
             {Object.entries(MODES).map(([modeKey, config]) => (
@@ -350,16 +209,19 @@ export function ChordMoodDecoder() {
                 type="button"
                 className={`filter-chip${mode === modeKey ? ' active' : ''}`}
                 onClick={() => handleModeSwitch(modeKey)}
+                disabled={phase === 'playing'}
+                role="tab"
+                aria-selected={mode === modeKey}
               >
                 {config.label}
               </button>
             ))}
           </div>
 
-          <p className="chord-game-status">{status}</p>
+          <p className="chord-game-status" role="status" aria-live="polite">{status}</p>
 
           <div className="chord-game-actions">
-            <button type="button" className="primary-button" onClick={() => handlePlayNewChord()}>
+            <button type="button" className="primary-button" onClick={() => handlePlayNewChord()} disabled={phase === 'playing'}>
               {phase === 'idle' ? 'Play chord' : 'New chord'}
             </button>
             <button type="button" className="secondary-button" onClick={handleReplay} disabled={phase === 'idle' || phase === 'playing'}>
@@ -394,7 +256,10 @@ export function ChordMoodDecoder() {
                 {prompt.answer.label}
               </strong>
               <span>
-                {mode === 'easy' ? 'You were listening for the chord family.' : 'You were identifying the exact chord quality.'}
+                Notes: {prompt.notes.map(midiNoteName).join(' · ')}
+              </span>
+              <span>
+                Intervals: {prompt.answer.intervals.map((interval) => ({ 0: '1', 2: '2', 3: 'b3', 4: '3', 5: '4', 6: 'b5', 7: '5', 10: 'b7', 11: '7', 14: '9' })[interval]).join(' · ')}
               </span>
             </div>
           ) : null}

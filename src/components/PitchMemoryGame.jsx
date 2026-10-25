@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createMiniGameAudio, GAME_AUDIO_LEVEL } from '../miniGameAudio'
 
 const ROUND_COUNT = 5
 const MAX_REPLAYS = 7
@@ -69,8 +70,8 @@ function buildToneSequence(mode) {
 }
 
 export function PitchMemoryGame() {
-  const audioContextRef = useRef(null)
-  const activeNodesRef = useRef([])
+  const audioRef = useRef(null)
+  const volumeRef = useRef(GAME_AUDIO_LEVEL)
   const runTokenRef = useRef(0)
   const [mode, setMode] = useState('easy')
   const [phase, setPhase] = useState('idle')
@@ -81,6 +82,7 @@ export function PitchMemoryGame() {
   const [sequenceStep, setSequenceStep] = useState(null)
   const [results, setResults] = useState([])
   const [replaysLeft, setReplaysLeft] = useState(MAX_REPLAYS)
+  const [volume, setVolume] = useState(GAME_AUDIO_LEVEL)
 
   const preset = GAME_MODES[mode]
   const totalScore = useMemo(
@@ -96,81 +98,36 @@ export function PitchMemoryGame() {
   useEffect(
     () => () => {
       runTokenRef.current += 1
-      activeNodesRef.current.forEach(({ oscillator }) => {
-        try {
-          oscillator.stop()
-        } catch {}
-      })
-      activeNodesRef.current = []
-      audioContextRef.current?.close().catch(() => {})
-      audioContextRef.current = null
+      audioRef.current?.close()
+      audioRef.current = null
     },
     [],
   )
 
-  async function ensureAudioContext() {
-    if (typeof window === 'undefined') {
-      return null
-    }
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
-    if (!AudioContextClass) {
-      return null
-    }
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContextClass()
-    }
-
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume()
-    }
-
-    return audioContextRef.current
+  function playTone(frequency, durationMs) {
+    if (!audioRef.current) audioRef.current = createMiniGameAudio()
+    audioRef.current.setLevel(volumeRef.current)
+    return audioRef.current.play([frequency], { timbre: 'memory', duration: durationMs / 1000 })
   }
 
-  async function playTone(frequency, durationMs, gainAmount = 0.18) {
-    const context = await ensureAudioContext()
+  function handleVolume(value) {
+    volumeRef.current = value
+    setVolume(value)
+    audioRef.current?.setLevel(value)
+  }
 
-    if (!context) {
-      setStatus('This browser blocked Web Audio, so the game cannot play tones here.')
-      return
-    }
-
-    const startAt = context.currentTime + 0.01
-    const stopAt = startAt + (durationMs / 1000)
-    const oscillator = context.createOscillator()
-    const filter = context.createBiquadFilter()
-    const gain = context.createGain()
-
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(frequency, startAt)
-
-    filter.type = 'lowpass'
-    filter.frequency.setValueAtTime(Math.max(frequency * 3.5, 1400), startAt)
-    filter.Q.setValueAtTime(0.2, startAt)
-
-    gain.gain.setValueAtTime(0.0001, startAt)
-    gain.gain.exponentialRampToValueAtTime(gainAmount, startAt + 0.03)
-    gain.gain.exponentialRampToValueAtTime(0.0001, stopAt)
-
-    oscillator.connect(filter)
-    filter.connect(gain)
-    gain.connect(context.destination)
-
-    const nodeRecord = { oscillator, gain, filter }
-    activeNodesRef.current.push(nodeRecord)
-
-    oscillator.onended = () => {
-      activeNodesRef.current = activeNodesRef.current.filter((entry) => entry !== nodeRecord)
-      oscillator.disconnect()
-      filter.disconnect()
-      gain.disconnect()
-    }
-
-    oscillator.start(startAt)
-    oscillator.stop(stopAt + 0.03)
-    await wait(durationMs + 80)
+  function handleModeSwitch(nextMode) {
+    if (nextMode === mode) return
+    runTokenRef.current += 1
+    audioRef.current?.stop()
+    setMode(nextMode)
+    setPhase('idle')
+    setSequence([])
+    setSequenceStep(null)
+    setResults([])
+    setCurrentRound(0)
+    setReplaysLeft(MAX_REPLAYS)
+    setStatus('Hear five tones, then rebuild them one by one.')
   }
 
   async function playSequence(tones, { consumeReplay = false } = {}) {
@@ -190,7 +147,16 @@ export function PitchMemoryGame() {
       }
 
       setSequenceStep(index + 1)
-      await playTone(tones[index], preset.toneMs, mode === 'hard' ? 0.17 : 0.18)
+      try {
+        const finished = await playTone(tones[index], preset.toneMs)
+        if (!finished || token !== runTokenRef.current) return
+      } catch {
+        if (token !== runTokenRef.current) return
+        setPhase('idle')
+        setSequenceStep(null)
+        setStatus('Audio could not start. Tap Start to try again.')
+        return
+      }
       await wait(preset.gapMs)
     }
 
@@ -224,14 +190,21 @@ export function PitchMemoryGame() {
   }
 
   async function handlePreviewGuess() {
-    await playTone(guessHz, 460, 0.16)
-    setStatus(`Previewing your guess at ${formatHz(guessHz)}.`)
+    const token = runTokenRef.current
+    try {
+      const finished = await playTone(guessHz, preset.toneMs)
+      if (finished && token === runTokenRef.current) setStatus(`Previewing your guess at ${formatHz(guessHz)}.`)
+    } catch {
+      setStatus('Audio could not start. Tap Hear my guess to try again.')
+    }
   }
 
   function handleSubmitGuess() {
     if (!sequence.length || phase !== 'guessing') {
       return
     }
+    runTokenRef.current += 1
+    audioRef.current?.stop()
 
     const targetHz = sequence[currentRound]
     const score = scoreGuess(targetHz, guessHz, preset.minHz, preset.maxHz)
@@ -283,6 +256,12 @@ export function PitchMemoryGame() {
           </div>
         </div>
 
+        <label className="mini-game-volume">
+          <span>Game volume</span>
+          <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => handleVolume(Number(event.target.value))} aria-label="Ear Memory volume" />
+          <output>{Math.round(volume * 100)}%</output>
+        </label>
+
         <div className="pitch-game-topline">
           <div className="pitch-game-mode-switch" role="tablist" aria-label="Game difficulty">
             {Object.entries(GAME_MODES).map(([value, option]) => (
@@ -290,7 +269,9 @@ export function PitchMemoryGame() {
                 key={value}
                 type="button"
                 className={`filter-chip${mode === value ? ' active' : ''}`}
-                onClick={() => setMode(value)}
+                onClick={() => handleModeSwitch(value)}
+                role="tab"
+                aria-selected={mode === value}
                 disabled={phase === 'playing'}
               >
                 {option.label}
@@ -305,7 +286,7 @@ export function PitchMemoryGame() {
         </div>
 
         <div className="pitch-game-stage">
-          <div className="pitch-game-status">
+          <div className="pitch-game-status" role="status" aria-live="polite">
             <p>{status}</p>
           </div>
 
