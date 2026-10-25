@@ -6,6 +6,8 @@ import { SiteAudioEngine } from './audioEngine'
 import { ChordMoodDecoder } from './components/ChordMoodDecoder'
 import { PitchMemoryGame } from './components/PitchMemoryGame'
 import { DiscCursor } from './components/DiscCursor'
+import VideoReelPhone from './components/VideoReelPhone'
+import { collectReelVideos } from './videoReel'
 
 const LazyHeroScene = lazy(() =>
   import('./components/hero/PixelHero').then((module) => ({ default: module.HeroScene })),
@@ -395,6 +397,12 @@ const eotd = {
     { href: 'https://www.youtube.com/watch?v=0FoNn_UwjW4', videoId: '0FoNn_UwjW4', embed: 'https://www.youtube-nocookie.com/embed/0FoNn_UwjW4?rel=0', title: 'EOTD 1105' },
   ],
 }
+
+const reelVideos = collectReelVideos([
+  ...featuredCollections.flatMap((collection) => collection.items.map((item) => ({ ...item, category: collection.label }))),
+  ...listeningRoom.liveVideos.map((item) => ({ ...item, category: 'Live videos' })),
+  ...eotd.sessions.map((item) => ({ ...item, category: 'EOTD' })),
+])
 
 const services = [
   'Sound Design',
@@ -1434,6 +1442,7 @@ function PortfolioApp() {
 
   return (
     <div className="portfolio-shell" ref={shellRef} onClickCapture={handleGlobalClick}>
+      <VideoReelPhone videos={reelVideos} />
       <div className={`random-fx-unit${isFxUnitCollapsed ? ' collapsed' : ''}`} aria-label="Random sound effects unit">
         <div className="random-fx-unit-head">
           <div>
